@@ -1,0 +1,406 @@
+// =============================================================================
+// QUALITY TEST - Schema Prisma (PostgreSQL 16)
+// =============================================================================
+// Fiel a `docs/architecture/modelo-de-dados.md` (seção 11 da especificação mestra).
+//
+// Regras de integridade aplicadas:
+//  - Unicidade: User.email, Project.code, Occurrence.publicCode,
+//    ProjectMember (projectId, userId).
+//  - Índices para os filtros frequentes documentados.
+//  - Sem exclusão em cascata em dados de histórico/auditoria
+//    (OccurrenceHistory, AuditLog, NotificationDelivery usam Restrict/SetNull).
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// Enums (seções 3.2, 5.2, 5.3, 5.4, 7 e 11 da especificação)
+// -----------------------------------------------------------------------------
+
+/// Perfil global do usuário. Apenas administradores possuem perfil global.
+enum GlobalRole {
+  ADMINISTRADOR
+}
+
+/// Perfil do vínculo do usuário dentro de um projeto (ProjectMember).
+enum ProjectRole {
+  GESTOR
+  TESTADOR
+  DESENVOLVEDOR
+}
+
+/// Status de registro genérico (desativação lógica / soft delete).
+enum RegistrationStatus {
+  ATIVO
+  INATIVO
+}
+
+/// Prioridade da ocorrência (seção 5.3).
+enum OccurrencePriority {
+  CRITICA
+  ALTA
+  MEDIA
+  BAIXA
+}
+
+/// Status da ocorrência (seção 5.4).
+enum OccurrenceStatus {
+  ABERTO
+  EM_ANALISE
+  EM_DESENVOLVIMENTO
+  AGUARDANDO_HOMOLOGACAO
+  REPROVADO_HOMOLOGACAO
+  CONCLUIDO
+  CANCELADO
+}
+
+/// Categorias iniciais de ocorrência (seção 5.2).
+enum OccurrenceCategory {
+  ERRO_FUNCIONAL
+  ERRO_VISUAL
+  ERRO_INTEGRACAO
+  ERRO_VALIDACAO
+  DESEMPENHO
+  SEGURANCA
+  ACESSIBILIDADE
+  COMPATIBILIDADE
+  OUTROS
+}
+
+/// Tipo de ambiente por projeto (seção 11).
+enum EnvironmentType {
+  DEVELOPMENT
+  TESTING
+  STAGING
+  PRODUCTION
+}
+
+/// Canal de notificação (seção 7).
+enum NotificationChannel {
+  WHATSAPP
+  EMAIL
+  TEAMS
+}
+
+/// Evento que dispara uma regra de notificação.
+enum NotificationEventType {
+  OCCURRENCE_CREATED
+  OCCURRENCE_UPDATED
+  OCCURRENCE_STATUS_CHANGED
+}
+
+/// Status de uma tentativa de entrega de notificação.
+enum NotificationDeliveryStatus {
+  PENDENTE
+  ENVIADO
+  FALHA
+  DESCARTADO
+}
+
+// -----------------------------------------------------------------------------
+// Entidades
+// -----------------------------------------------------------------------------
+
+/// Usuário da plataforma. Uma única conta pode participar de vários projetos.
+model User {
+  id           String             @id @default(cuid())
+  name         String
+  email        String             @unique
+  passwordHash String
+  globalRole   GlobalRole?
+  status       RegistrationStatus @default(ATIVO)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  lastLoginAt  DateTime?
+
+  memberships         ProjectMember[]        @relation("ProjectMemberUser")
+  grantedMemberships  ProjectMember[]        @relation("ProjectMemberAddedBy")
+  reportedOccurrences Occurrence[]           @relation("OccurrenceReporter")
+  assignedOccurrences Occurrence[]           @relation("OccurrenceAssignee")
+  attachments         OccurrenceAttachment[]
+  comments            OccurrenceComment[]
+  historyEntries      OccurrenceHistory[]
+  auditLogs           AuditLog[]
+  refreshSessions     RefreshSession[]
+
+  @@map("users")
+}
+
+/// Projeto isolado, com seus próprios dados, equipes e configurações.
+model Project {
+  id          String             @id @default(cuid())
+  name        String
+  code        String             @unique
+  description String?
+  status      RegistrationStatus @default(ATIVO)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  members      ProjectMember[]
+  environments ProjectEnvironment[]
+  domains      ProjectDomainMapping[]
+  occurrences  Occurrence[]
+  destinations NotificationDestination[]
+  rules        NotificationRule[]
+  auditLogs    AuditLog[]
+
+  @@map("projects")
+}
+
+/// Associação muitos-para-muitos entre usuários e projetos, com papel por projeto.
+model ProjectMember {
+  id        String             @id @default(cuid())
+  projectId String
+  userId    String
+  role      ProjectRole
+  status    RegistrationStatus @default(ATIVO)
+  addedBy   String
+  createdAt DateTime           @default(now())
+
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  user        User    @relation("ProjectMemberUser", fields: [userId], references: [id], onDelete: Restrict)
+  addedByUser User    @relation("ProjectMemberAddedBy", fields: [addedBy], references: [id], onDelete: Restrict)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@index([projectId, status])
+  @@map("project_members")
+}
+
+/// Ambientes e URLs por projeto.
+model ProjectEnvironment {
+  id        String             @id @default(cuid())
+  projectId String
+  name      String
+  baseUrl   String
+  type      EnvironmentType
+  status    RegistrationStatus @default(ATIVO)
+
+  project     Project                @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  domains     ProjectDomainMapping[]
+  occurrences Occurrence[]
+
+  @@index([projectId])
+  @@map("project_environments")
+}
+
+/// Mapeamento de domínio/URL para projeto (sugestão de projeto na extensão).
+model ProjectDomainMapping {
+  id            String  @id @default(cuid())
+  projectId     String
+  domainPattern String
+  environmentId String
+  enabled       Boolean @default(true)
+
+  project     Project            @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  environment ProjectEnvironment @relation(fields: [environmentId], references: [id], onDelete: Restrict)
+
+  @@index([projectId])
+  @@index([environmentId])
+  @@index([domainPattern])
+  @@map("project_domain_mappings")
+}
+
+/// Ocorrência / defeito registrado durante os testes.
+model Occurrence {
+  id                  String             @id @default(cuid())
+  publicCode          String             @unique
+  projectId           String
+  environmentId       String?
+  title               String
+  description         String?
+  categoryId          OccurrenceCategory
+  priority            OccurrencePriority
+  status              OccurrenceStatus   @default(ABERTO)
+  reporterUserId      String
+  assigneeUserId      String?
+  pageUrl             String?
+  pageTitle           String?
+  browserInfo         String?
+  operatingSystemInfo String?
+  viewportInfo        String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  project     Project             @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  environment ProjectEnvironment? @relation(fields: [environmentId], references: [id], onDelete: SetNull)
+  reporter    User                @relation("OccurrenceReporter", fields: [reporterUserId], references: [id], onDelete: Restrict)
+  assignee    User?               @relation("OccurrenceAssignee", fields: [assigneeUserId], references: [id], onDelete: SetNull)
+
+  attachments OccurrenceAttachment[]
+  comments    OccurrenceComment[]
+  history     OccurrenceHistory[]
+  deliveries  NotificationDelivery[]
+  aiAnalyses  AIAnalysis[]
+
+  @@index([projectId, status])
+  @@index([projectId, priority])
+  @@index([projectId, categoryId])
+  @@index([projectId, reporterUserId])
+  @@index([projectId, assigneeUserId])
+  @@index([projectId, createdAt])
+  @@map("occurrences")
+}
+
+/// Anexos da ocorrência (screenshot principal e evidências adicionais).
+model OccurrenceAttachment {
+  id           String   @id @default(cuid())
+  occurrenceId String
+  storageKey   String
+  fileName     String
+  mimeType     String
+  size         Int
+  uploadedBy   String
+  createdAt    DateTime @default(now())
+
+  occurrence Occurrence @relation(fields: [occurrenceId], references: [id], onDelete: Restrict)
+  uploader   User       @relation(fields: [uploadedBy], references: [id], onDelete: Restrict)
+
+  @@index([occurrenceId])
+  @@map("occurrence_attachments")
+}
+
+/// Comentários na ocorrência.
+model OccurrenceComment {
+  id           String   @id @default(cuid())
+  occurrenceId String
+  userId       String
+  content      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  occurrence Occurrence @relation(fields: [occurrenceId], references: [id], onDelete: Restrict)
+  author     User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([occurrenceId, createdAt])
+  @@map("occurrence_comments")
+}
+
+/// Histórico cronológico de alterações por ocorrência.
+/// Sem exclusão em cascata: histórico não deve ser apagado pela remoção do pai.
+model OccurrenceHistory {
+  id            String   @id @default(cuid())
+  occurrenceId  String
+  actorUserId   String
+  action        String
+  previousValue String?
+  newValue      String?
+  createdAt     DateTime @default(now())
+
+  occurrence Occurrence @relation(fields: [occurrenceId], references: [id], onDelete: Restrict)
+  actor      User       @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([occurrenceId, createdAt])
+  @@map("occurrence_history")
+}
+
+/// Destino de notificação por projeto. `destinationConfig` nunca guarda segredos em texto aberto.
+model NotificationDestination {
+  id                String              @id @default(cuid())
+  projectId         String
+  channel           NotificationChannel
+  destinationConfig Json
+  enabled           Boolean             @default(false)
+
+  project    Project                @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  rules      NotificationRule[]
+  deliveries NotificationDelivery[]
+
+  @@index([projectId])
+  @@map("notification_destinations")
+}
+
+/// Regra que associa um evento de negócio a um destino de notificação.
+model NotificationRule {
+  id            String                @id @default(cuid())
+  projectId     String
+  eventType     NotificationEventType
+  filters       Json?
+  destinationId String
+  enabled       Boolean               @default(true)
+
+  project     Project                 @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  destination NotificationDestination @relation(fields: [destinationId], references: [id], onDelete: Restrict)
+
+  @@index([projectId, eventType])
+  @@map("notification_rules")
+}
+
+/// Registro de cada tentativa de entrega (apoia idempotência e retentativas).
+model NotificationDelivery {
+  id                String                     @id @default(cuid())
+  occurrenceId      String
+  destinationId     String
+  idempotencyKey    String
+  status            NotificationDeliveryStatus @default(PENDENTE)
+  providerMessageId String?
+  attempts          Int                        @default(0)
+  lastError         String?
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+
+  occurrence  Occurrence              @relation(fields: [occurrenceId], references: [id], onDelete: Restrict)
+  destination NotificationDestination @relation(fields: [destinationId], references: [id], onDelete: Restrict)
+
+  @@index([occurrenceId, destinationId, idempotencyKey])
+  @@index([status])
+  @@map("notification_deliveries")
+}
+
+/// Trilha de auditoria. Não deve ser editável por usuários comuns.
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String
+  projectId   String?
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  actor   User     @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([projectId, createdAt])
+  @@map("audit_logs")
+}
+
+/// Sessão de atualização de token (refresh token armazenado apenas como hash).
+/// Não é dado de auditoria: pode ser removida junto com o usuário.
+model RefreshSession {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_sessions")
+}
+
+/// Sugestões de IA (módulo opcional e desativável). Nunca armazenar segredos.
+model AIAnalysis {
+  id           String   @id @default(cuid())
+  occurrenceId String
+  provider     String
+  model        String
+  suggestions  Json
+  createdAt    DateTime @default(now())
+
+  occurrence Occurrence @relation(fields: [occurrenceId], references: [id], onDelete: Restrict)
+
+  @@index([occurrenceId])
+  @@map("ai_analyses")
+}

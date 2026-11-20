@@ -1,0 +1,74 @@
+# =============================================================================
+# QUALITY TEST - Serviços de desenvolvimento
+# =============================================================================
+# ATENÇÃO: as credenciais abaixo são EXCLUSIVAMENTE para desenvolvimento local.
+# Não utilize estes valores em nenhum ambiente compartilhado ou de produção.
+#
+# Subir:  docker compose -f docker/docker-compose.yml up -d
+# Parar:  docker compose -f docker/docker-compose.yml down
+# =============================================================================
+
+name: qualitytest
+
+services:
+  # --- PostgreSQL 16 ---------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: qualitytest-postgres
+    restart: unless-stopped
+    environment:
+      # Credenciais de DESENVOLVIMENTO (ver .env.example)
+      POSTGRES_USER: qualitytest
+      POSTGRES_PASSWORD: qualitytest
+      POSTGRES_DB: qualitytest
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qualitytest -d qualitytest"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # --- Redis 7 (BullMQ) ------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: qualitytest-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # --- MinIO (storage S3 compatível) -----------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: qualitytest-minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9002"]
+    environment:
+      # Credenciais de DESENVOLVIMENTO (ver .env.example)
+      MINIO_ROOT_USER: qualitytest
+      MINIO_ROOT_PASSWORD: qualitytest123
+    ports:
+      - "9000:9000" # API S3
+      - "9002:9002" # Console web
+    volumes:
+      - minio-data:/data
+
+volumes:
+  postgres-data:
+    name: qualitytest-postgres-data
+  redis-data:
+    name: qualitytest-redis-data
+  minio-data:
+    name: qualitytest-minio-data

@@ -1,0 +1,934 @@
+QUALITY TEST ESPECIFICAÇÃO MESTRE DO PRODUTO, ARQUITETURA E PLANO DE
+IMPLEMENTAÇÃO Documento consolidado para desenvolvimento com TRAE AI
+Repositório oficial: https://github.com/alexsandrosodre/qualitytest.git
+Plataforma de hospedagem do frontend: Vercel Versão do documento: 4.0
+Data: 20/11/2026
+
+======================================================================
+0. INSTRUÇÃO PRINCIPAL AO TRAE AI
+======================================================================
+
+Atue como uma equipe sênior multidisciplinar de engenharia de software.
+Seu objetivo é planejar, implementar, testar, documentar e preparar para
+implantação o QUALITY TEST, uma plataforma corporativa de gestão de
+testes, registro de defeitos e acompanhamento de homologação.
+
+Não trate este documento como uma solicitação para produzir somente
+telas estáticas. Entregue uma aplicação funcional, com persistência
+real, autenticação, autorização, validação, tratamento de erros, testes
+e documentação.
+
+Trabalhe no repositório existente:
+https://github.com/alexsandrosodre/qualitytest.git
+
+Antes de alterar qualquer arquivo: 1. Inspecione o repositório,
+branches, estrutura e arquivos existentes. 2. Preserve implementações e
+configurações úteis. 3. Não apague nem sobrescreva trabalho existente
+sem justificativa e confirmação. 4. Apresente um diagnóstico do estado
+atual. 5. Elabore ou atualize o plano de execução e as decisões
+arquiteturais. 6. Identifique dependências, riscos, custos e serviços
+externos necessários.
+
+Não invente credenciais, domínios, contas, permissões, integrações ou
+resultados de testes. Quando uma integração depender de credenciais ou
+aprovação externa, implemente a estrutura segura, documente a
+configuração pendente e informe claramente o que ainda não pode ser
+validado.
+
+Implemente de forma incremental. Ao final de cada etapa, execute os
+testes correspondentes, corrija falhas e registre o resultado. Não
+declare uma etapa concluída apenas porque o código foi escrito.
+
+====================================================================== 1.
+VISÃO GERAL DO PRODUTO
+======================================================================
+
+Nome oficial: QUALITY TEST
+
+O Quality Test será uma plataforma interna para centralizar o registro e
+o acompanhamento de testes, bugs, inconsistências e problemas
+identificados durante a homologação dos sistemas desenvolvidos ou
+mantidos pela empresa.
+
+Atualmente, as informações de teste ficam dispersas em diversos grupos e
+conversas de WhatsApp. A plataforma deverá concentrar os registros em
+uma base única, organizada por projeto, usuário, equipe, ambiente,
+prioridade e status.
+
+O WhatsApp será um canal de notificação. O registro oficial, o histórico
+e o ciclo de vida das ocorrências permanecerão no Quality Test. A
+indisponibilidade do WhatsApp não poderá impedir o cadastro ou a
+consulta de ocorrências.
+
+Objetivos: - Registrar defeitos com rapidez, inclusive por uma extensão
+do Chrome. - Capturar e anexar screenshots. - Associar cada ocorrência
+ao projeto correto. - Identificar automaticamente o usuário que
+registrou a ocorrência. - Manter projetos e dados organizados de forma
+independente. - Direcionar notificações conforme as regras de cada
+projeto. - Permitir acompanhamento por testadores, gestores,
+desenvolvedores e administradores. - Manter trilha de auditoria. -
+Disponibilizar indicadores e relatórios. - Oferecer recursos opcionais
+de IA para auxiliar a classificação e a identificação de duplicidades. -
+Manter documentação técnica e funcional completa e atualizada.
+
+======================================================================
+2. REQUISITOS FUNDAMENTAIS E REGRAS DE NEGÓCIO
+======================================================================
+
+2.1. Multi-projeto
+
+A plataforma deverá permitir cadastrar diversos projetos, por exemplo: -
+Intranet Maricá. - Portal da Tecnologia. - CNH para Todos. - Voar para
+Todos. - Outros sistemas que venham a ser cadastrados.
+
+Não limitar o sistema a esses exemplos. Os projetos devem ser
+cadastráveis pelo administrador ou gestor autorizado.
+
+Cada projeto deverá possuir suas próprias: - Ocorrências. -
+Configurações. - Ambientes e URLs. - Equipes e participantes. -
+Responsáveis. - Regras de notificação. - Destinos de comunicação. -
+Indicadores e relatórios. - Categorias ou configurações específicas,
+quando aplicável.
+
+2.2. Isolamento lógico por projeto
+
+Implementar isolamento lógico consistente em todas as camadas: - API. -
+Consultas ao banco. - Serviços de negócio. - Dashboard. - Listagens. -
+Pesquisa. - Exportações. - Relatórios. - Comentários e anexos. -
+Notificações. - Extensão do navegador.
+
+Uma ocorrência de um projeto não poderá aparecer para usuários sem
+autorização naquele projeto. O filtro visual no frontend não é
+suficiente: a autorização deve ser validada no backend em toda operação.
+
+O administrador global poderá consultar todos os projetos. Os demais
+usuários somente poderão acessar projetos aos quais estejam vinculados e
+para os quais tenham permissão.
+
+Toda entidade dependente de projeto deverá carregar uma referência
+inequívoca ao projeto, sempre que fizer sentido. Definir índices e
+restrições no banco para manter integridade.
+
+2.3. Usuários compartilhados entre projetos
+
+Um mesmo usuário poderá participar de vários projetos com uma única
+conta. Não criar contas duplicadas por projeto.
+
+Implementar relacionamento muitos-para-muitos entre usuários e projetos,
+por meio de uma entidade de associação, por exemplo ProjectMember,
+contendo: - Usuário. - Projeto. - Papel ou permissões no projeto. - Data
+de inclusão. - Usuário que concedeu o acesso. - Status do vínculo.
+
+O usuário poderá ter permissões diferentes em projetos diferentes. O
+acesso deverá ser verificado considerando o projeto da ocorrência e a
+associação ativa do usuário.
+
+2.4. Direcionamento da ocorrência
+
+Ao registrar uma ocorrência, o testador deverá selecionar o projeto de
+destino. A extensão poderá sugerir um projeto com base na URL/domínio
+configurado, mas a sugestão deverá ser visível e confirmável pelo
+usuário. Não selecionar silenciosamente um projeto incorreto.
+
+O projeto selecionado determinará: - A associação da ocorrência. - As
+permissões aplicáveis. - Os responsáveis e equipes elegíveis. - As
+regras de notificação. - Os destinos configurados. - Os relatórios nos
+quais a ocorrência será contabilizada.
+
+2.5. Rastreabilidade
+
+Toda ocorrência deverá registrar automaticamente: - Identificador
+único. - Usuário criador. - Projeto. - Data e hora do servidor. - Dados
+técnicos permitidos da captura. - Histórico de alterações.
+
+O sistema deverá registrar também quem alterou status, prioridade,
+responsável, descrição, projeto (se a transferência for permitida),
+comentários e demais dados relevantes.
+
+======================================================================
+3. PERFIS, USUÁRIOS E PERMISSÕES
+======================================================================
+
+3.1. Gestão de usuários
+
+Implementar: - Cadastro de usuários. - Edição de dados. - Ativação e
+desativação. - Convite ou criação por administrador, conforme decisão de
+produto. - Login e logout. - Recuperação e redefinição de senha. -
+Alteração de senha. - Gestão de sessões. - Associação a projetos. -
+Consulta de participação e histórico, respeitando permissões. - Registro
+de auditoria de ações administrativas.
+
+Dados sugeridos: - Nome completo. - E-mail único. - Hash da senha (nunca
+armazenar senha em texto puro). - Status. - Perfil global, se houver. -
+Data de criação e atualização. - Último acesso, quando disponível. -
+Preferências básicas.
+
+3.2. Perfis iniciais
+
+ADMINISTRADOR: - Gerencia configurações globais. - Cadastra e administra
+usuários. - Cria, edita, ativa e desativa projetos. - Gerencia
+associações e permissões. - Configura integrações e notificações. -
+Consulta todos os projetos e relatórios. - Acessa auditoria.
+
+GESTOR: - Atua nos projetos aos quais possui acesso. - Gerencia
+ocorrências e responsáveis. - Acompanha equipes, indicadores e
+relatórios. - Pode administrar membros do projeto somente se receber
+essa permissão.
+
+TESTADOR: - Registra ocorrências. - Anexa capturas e evidências. -
+Consulta e acompanha ocorrências dos projetos autorizados. - Comenta e
+complementa registros conforme permissão. - Não pode elevar privilégios
+nem administrar usuários globalmente.
+
+DESENVOLVEDOR: - Consulta ocorrências dos projetos autorizados. -
+Atualiza ocorrências atribuídas ou permitidas. - Registra análise
+técnica e comentários. - Atualiza status conforme fluxo autorizado. -
+Não pode consultar projetos sem vínculo.
+
+Preferir RBAC (Role-Based Access Control) combinado com permissões por
+projeto. Não confiar apenas no papel global do usuário.
+
+3.3. Identificação do autor
+
+A extensão deverá usar a sessão autenticada do Quality Test. O backend
+deverá determinar o usuário pelo token/sessão validado, e não aceitar
+como confiável um userId enviado livremente pelo navegador.
+
+O usuário não deverá precisar digitar seu nome ao registrar uma
+ocorrência. A autoria será atribuída no servidor a partir da identidade
+autenticada.
+
+======================================================================
+4. MÓDULO DE PROJETOS
+======================================================================
+
+Permitir criar, editar, consultar, ativar e desativar projetos.
+
+Campos sugeridos: - Nome. - Código/slug único. - Descrição. - URL
+principal. - URLs de homologação. - URLs de produção. - Ambientes
+disponíveis. - Status. - Gestor responsável. - Equipes. -
+Participantes. - Regras de notificação. - Data de criação e atualização.
+
+Exemplo: Projeto: Intranet Maricá Código: INTRANET-MARICA URL de
+homologação: configurável pelo administrador URL de produção:
+configurável pelo administrador
+
+Projeto: Portal da Tecnologia Código: PORTAL-TECNOLOGIA URL de
+homologação: configurável pelo administrador URL de produção:
+configurável pelo administrador
+
+Não utilizar URLs fictícias como valores reais. Os exemplos acima são
+apenas referências de cadastro.
+
+======================================================================
+5. MÓDULO DE OCORRÊNCIAS / BUGS
+======================================================================
+
+5.1. Cadastro
+
+Campos: - Código legível e único (ex.: QT-000125). - Título. - Descrição
+detalhada. - Projeto. - Ambiente. - URL da página. - Categoria. -
+Prioridade. - Status. - Responsável. - Usuário que registrou. -
+Screenshot principal. - Anexos adicionais. - Passos para reproduzir,
+quando informados. - Resultado esperado. - Resultado obtido. - Navegador
+e versão, quando disponíveis. - Sistema operacional, quando
+disponível. - Resolução e dimensões da viewport, quando disponíveis. -
+Data e hora. - Histórico.
+
+5.2. Categorias iniciais
+
+-   Erro funcional.
+-   Erro visual.
+-   Erro de integração.
+-   Erro de validação.
+-   Problema de desempenho.
+-   Problema de segurança.
+-   Acessibilidade.
+-   Compatibilidade.
+-   Outros.
+
+Categorias deverão ser configuráveis, sem necessidade de alteração de
+código para inclusão de novas opções.
+
+5.3. Prioridades
+
+-   Crítica.
+-   Alta.
+-   Média.
+-   Baixa.
+
+Documentar critérios objetivos para cada prioridade. Não confundir
+prioridade com status.
+
+5.4. Status iniciais
+
+-   Aberto.
+-   Em análise.
+-   Em desenvolvimento.
+-   Aguardando homologação.
+-   Reprovado na homologação.
+-   Concluído.
+-   Cancelado.
+
+Implementar transições de status controladas por regras de negócio e
+permissões. Registrar autor, data, status anterior, status novo e
+justificativa quando necessária.
+
+5.5. Funcionalidades
+
+-   Listagem com paginação.
+-   Pesquisa por código, título e descrição, respeitando permissões.
+-   Filtros por projeto, ambiente, categoria, prioridade, status,
+    responsável, autor e período.
+-   Ordenação.
+-   Visualização detalhada.
+-   Comentários.
+-   Anexos.
+-   Atribuição e reatribuição.
+-   Histórico cronológico.
+-   Registro de alterações.
+-   Exportação autorizada.
+-   Prevenção de duplicidade por idempotência na criação.
+
+======================================================================
+6. EXTENSÃO DO GOOGLE CHROME
+======================================================================
+
+Criar extensão baseada em Chrome Extension Manifest V3, com TypeScript e
+interface React ou tecnologia compatível com a arquitetura.
+
+Objetivo: permitir que o testador registre uma ocorrência enquanto
+navega no sistema que está testando, sem precisar alternar para o painel
+principal.
+
+6.1. Fluxo principal
+
+1.  Usuário autentica-se no Quality Test.
+2.  Abre o sistema que está testando.
+3.  Clica no ícone da extensão.
+4.  A extensão permite capturar a aba atual.
+5.  Opcionalmente, permite selecionar uma região da tela e fazer
+    marcações.
+6.  Usuário seleciona ou confirma o projeto.
+7.  Informa título, descrição, categoria e prioridade.
+8.  Confirma o envio.
+9.  A API valida identidade e acesso ao projeto.
+10. O backend salva ocorrência e evidências.
+11. A extensão apresenta o código da ocorrência e o resultado do envio.
+
+6.2. Identificação do projeto
+
+-   Permitir seleção manual.
+-   Permitir configurar associação de domínio/URL a projeto.
+-   Se houver correspondência segura, sugerir o projeto.
+-   Exibir claramente a sugestão.
+-   Permitir correção manual.
+-   Se houver ambiguidade, exigir seleção.
+-   Validar no backend se o usuário participa do projeto.
+
+6.3. Captura e dados técnicos
+
+Coletar somente informações necessárias e permitidas: - URL e título da
+página. - Data e hora. - Dimensões da captura. - Resolução/viewport,
+quando disponíveis. - Navegador e versão, quando disponíveis. - Sistema
+operacional, somente quando disponível de forma confiável.
+
+Não coletar: - Senhas. - Cookies. - Tokens. - Dados de autenticação do
+sistema testado. - Conteúdo de formulários. - Dados pessoais ou
+sensíveis da página sem necessidade e autorização.
+
+A captura de tela poderá conter dados sensíveis visíveis. Exibir
+orientação ao usuário para revisar a imagem antes do envio. Avaliar
+recurso de recorte e ocultação de informações antes de anexar.
+
+6.4. Segurança da extensão
+
+-   Usar APIs oficiais do navegador.
+-   Solicitar somente permissões necessárias.
+-   Não injetar scripts sem necessidade.
+-   Não armazenar tokens em local inseguro.
+-   Proteger comunicação com API via HTTPS.
+-   Implementar expiração e renovação segura de sessão.
+-   Restringir domínios e permissões.
+-   Não expor credenciais no código da extensão.
+-   Documentar instalação e atualização.
+
+6.5. Falhas de conexão
+
+Pode haver fila local temporária de envio, com proteção de dados e
+expiração. Reenvios devem usar chave de idempotência para evitar
+ocorrências duplicadas. Informar claramente ao usuário quando a
+ocorrência estiver pendente, enviada ou falhar.
+
+======================================================================
+7. AGENTE E SERVIÇO DE NOTIFICAÇÕES WHATSAPP
+======================================================================
+
+O componente de WhatsApp será um serviço de notificação desacoplado do
+núcleo do Quality Test.
+
+Responsabilidades: - Receber evento de ocorrência criada/atualizada. -
+Consultar projeto e regras de notificação. - Preparar mensagem
+padronizada. - Enviar para destinos autorizados e tecnicamente
+suportados. - Registrar tentativa, resposta e status disponível. -
+Tratar falhas e retentativas. - Evitar mensagens duplicadas. -
+Disponibilizar histórico de notificações.
+
+Exemplo de mensagem:
+
+QUALITY TEST — NOVA OCORRÊNCIA Código: QT-000125 Projeto: Intranet
+Maricá Categoria: Erro visual Prioridade: Alta Título: Componente
+desalinhado na página de cadastro Registrado por: nome do usuário
+Ambiente: Homologação Data: data/hora Acesse: link autenticado para a
+ocorrência
+
+7.1. Integração oficial
+
+Priorizar a WhatsApp Business Platform / Cloud API oficial da Meta.
+Antes de implementar qualquer fluxo, verificar a documentação oficial
+vigente, elegibilidade da conta, limitações de grupos, regras de
+templates, janela de atendimento, webhooks e permissões.
+
+Não presumir que a API oficial permita enviar mensagens a qualquer grupo
+preexistente. A possibilidade de uso da Groups API, seus requisitos e
+limites deverá ser verificada diretamente na documentação oficial no
+momento da implementação.
+
+Não utilizar automação não oficial do WhatsApp Web como dependência
+obrigatória ou caminho de produção.
+
+Se grupos existentes não forem suportados, oferecer alternativas
+autorizadas, como destinatários individuais, grupos oficialmente
+elegíveis ou outros canais corporativos. O painel deverá permitir
+configurar destinos por projeto.
+
+7.2. Resiliência
+
+-   A ocorrência deve ser salva antes da tentativa de notificação.
+-   Falha no WhatsApp não pode desfazer o registro.
+-   Usar fila assíncrona.
+-   Implementar retentativas com backoff.
+-   Implementar dead-letter queue ou mecanismo equivalente.
+-   Registrar erros sem expor tokens.
+-   Permitir reprocessamento administrativo.
+-   Implementar idempotência por evento/destino.
+-   Exibir situação da notificação.
+
+7.3. Adaptadores
+
+Criar interface de canal de notificação para permitir adicionar
+futuramente e-mail, Microsoft Teams ou outros canais sem acoplar a regra
+de negócio à Meta.
+
+======================================================================
+8. RECURSOS OPCIONAIS DE INTELIGÊNCIA ARTIFICIAL
+======================================================================
+
+Criar módulo opcional, desacoplado e configurável.
+
+Possibilidades: - Sugerir título a partir da descrição. - Sugerir
+categoria. - Sugerir prioridade. - Resumir descrição extensa. -
+Encontrar ocorrências potencialmente duplicadas. - Agrupar problemas
+relacionados. - Identificar recorrências por projeto. - Sugerir
+perguntas para melhorar os passos de reprodução.
+
+Regras: - IA é assistiva, não requisito para o cadastro básico. - Não
+fechar nem alterar status automaticamente. - Não atribuir prioridade
+crítica automaticamente sem validação. - Exibir que sugestões são
+geradas por IA. - Exigir confirmação humana para decisões
+operacionais. - Não enviar screenshots ou dados sensíveis a provedores
+externos sem configuração, base legal e controles adequados. - Registrar
+modelo/provedor e metadados necessários, sem armazenar segredos. -
+Permitir desativar a funcionalidade.
+
+======================================================================
+9. DASHBOARD E RELATÓRIOS
+======================================================================
+
+Dashboard global para administradores e dashboard limitado aos projetos
+autorizados para os demais perfis.
+
+Indicadores: - Total de ocorrências. - Abertas. - Em análise. - Em
+desenvolvimento. - Aguardando homologação. - Reprovadas. - Concluídas. -
+Canceladas. - Ocorrências por projeto. - Ocorrências por prioridade. -
+Ocorrências por categoria. - Ocorrências por responsável. - Ocorrências
+por testador/autor. - Tempo médio de resolução. - Evolução por
+período. - Taxa de reprovação na homologação.
+
+Todos os indicadores devem respeitar o escopo de acesso do usuário. Não
+misturar dados de projetos aos quais o usuário não tem acesso.
+
+======================================================================
+10. AUDITORIA E RASTREABILIDADE
+======================================================================
+
+Criar trilha de auditoria para: - Login/logout e eventos de segurança
+relevantes. - Criação e alteração de usuários. - Alteração de
+permissões. - Criação e edição de projetos. - Inclusão e remoção de
+membros. - Criação de ocorrências. - Alterações de campos. - Mudanças de
+status. - Alterações de prioridade e responsável. - Comentários e
+anexos. - Configurações de notificação. - Tentativas de integração.
+
+Cada evento deverá registrar, conforme aplicável: - Autor. - Tipo de
+ação. - Entidade e identificador. - Projeto relacionado. - Data/hora do
+servidor. - Valores anteriores e novos, evitando armazenar segredos. -
+Origem técnica mínima necessária.
+
+Auditoria não deve ser editável por usuários comuns. Definir política de
+retenção e acesso.
+
+======================================================================
+11. MODELO DE DADOS INICIAL
+======================================================================
+
+O modelo final deverá ser refinado pelo arquiteto e documentado em
+diagrama ER.
+
+Entidades sugeridas:
+
+User - id - name - email (único) - passwordHash - status - createdAt -
+updatedAt - lastLoginAt
+
+Project - id - name - code (único) - description - status - createdAt -
+updatedAt
+
+ProjectMember - id - projectId - userId - role/permission profile -
+status - addedBy - createdAt - unique(projectId, userId)
+
+ProjectEnvironment - id - projectId - name - baseUrl - type
+(development, testing, staging, production) - status
+
+ProjectDomainMapping - id - projectId - domain/pattern - environmentId -
+enabled
+
+Occurrence - id - publicCode (único) - projectId - environmentId -
+title - description - categoryId - priority - status - reporterUserId -
+assigneeUserId - pageUrl - pageTitle - browserInfo -
+operatingSystemInfo - viewportInfo - createdAt - updatedAt
+
+OccurrenceAttachment - id - occurrenceId - storageKey - fileName -
+mimeType - size - uploadedBy - createdAt
+
+OccurrenceComment - id - occurrenceId - userId - content - createdAt -
+updatedAt
+
+OccurrenceHistory - id - occurrenceId - actorUserId - action -
+previousValue - newValue - createdAt
+
+NotificationDestination - id - projectId - channel - destinationConfig
+(sem segredos em texto aberto) - enabled
+
+NotificationRule - id - projectId - eventType - filters -
+destinationId - enabled
+
+NotificationDelivery - id - occurrenceId - destinationId -
+idempotencyKey - status - providerMessageId - attempts - lastError -
+createdAt - updatedAt
+
+AuditLog - id - actorUserId - projectId (nullable para evento global) -
+action - entityType - entityId - metadata - createdAt
+
+RefreshSession ou estrutura equivalente - id - userId - tokenHash -
+expiresAt - revokedAt - createdAt
+
+AIAnalysis (opcional) - id - occurrenceId - provider - model -
+suggestions - createdAt
+
+Regras de integridade: - Definir foreign keys. - Definir índices para
+filtros frequentes. - Garantir unicidade de e-mail, código de projeto e
+código público da ocorrência. - Evitar exclusão em cascata de histórico
+importante. - Preferir desativação lógica quando apropriado. - Avaliar
+estratégia de isolamento por projeto e testes automatizados de
+autorização. - Nunca confiar em projectId enviado pelo cliente sem
+validar membership e permissão.
+
+======================================================================
+12. STACK TECNOLÓGICA E ORGANIZAÇÃO
+======================================================================
+
+Stack preferencial: Frontend: - Next.js com App Router. - React. -
+TypeScript strict. - Tailwind CSS. - shadcn/ui. - TanStack Query. -
+React Hook Form. - Zod.
+
+Backend: - Node.js. - NestJS. - TypeScript. - REST API. - Prisma ORM. -
+Swagger/OpenAPI.
+
+Dados: - PostgreSQL.
+
+Filas: - Redis. - BullMQ.
+
+Extensão: - Chrome Manifest V3. - TypeScript. - React, se adequado.
+
+Armazenamento: - S3 ou serviço compatível. - URLs assinadas. - Validação
+de tipo e tamanho. - Varredura de arquivos quando viável.
+
+Testes: - Jest ou Vitest conforme compatibilidade. - Supertest. -
+Playwright. - Testes de extensão e integração.
+
+Monorepositório sugerido: apps/ web/ api/ extension/ worker/ packages/
+shared/ types/ config/ infrastructure/ docker/ scripts/ docs/
+architecture/ diagrams/ api/ user-guides/ operations/
+
+Ajustar a estrutura se houver justificativa técnica. Não criar
+abstrações ou serviços adicionais sem necessidade.
+
+======================================================================
+13. VERCEL E INFRAESTRUTURA
+======================================================================
+
+O repositório oficial será conectado à Vercel para implantação do
+frontend Next.js e de componentes que sejam compatíveis com o modelo de
+execução da plataforma.
+
+Não presumir que todos os serviços devem ou podem rodar na Vercel.
+
+Planejamento: - Frontend Next.js: Vercel. - Backend NestJS: avaliar
+execução em serviço/container apropriado, ou recursos serverless somente
+após validar compatibilidade. - Workers BullMQ persistentes: executar em
+infraestrutura que suporte processos contínuos. - Redis: serviço
+gerenciado externo. - PostgreSQL: serviço gerenciado externo. -
+Screenshots e anexos: storage S3 compatível. - Domínio e HTTPS:
+configurar quando o domínio for fornecido. - Segredos: variáveis de
+ambiente e cofre de secrets da plataforma. - Logs e monitoramento:
+solução adequada para frontend, API e workers.
+
+13.1. Ambientes
+
+Development: - Ambiente local. - Dados de desenvolvimento. - Serviços
+isolados.
+
+Preview: - Deploys de validação associados a branches e pull requests. -
+Não utilizar credenciais de produção. - Banco/storage de preview
+isolados ou com segregação rigorosa.
+
+Production: - Deploy controlado. - Migrações revisadas. - Backups. -
+Monitoramento. - Rollback documentado. - Segredos próprios de produção.
+
+13.2. Git e CI/CD
+
+Repositório: https://github.com/alexsandrosodre/qualitytest.git
+
+Instruções: - Inspecionar o repositório existente. - Configurar branch
+principal conforme estado real do GitHub. - Criar branches de feature e
+correção. - Trabalhar por pull requests quando possível. - Executar
+lint, typecheck e testes no CI. - Bloquear merge quando verificações
+obrigatórias falharem. - Integrar Vercel ao repositório. - Validar
+Preview antes de produção. - Não executar deploy de produção sem
+autorização explícita.
+
+Não presumir nomes de branches, domínio, projeto Vercel ou credenciais.
+Detectar o estado real e documentar.
+
+======================================================================
+14. SEGURANÇA E LGPD
+======================================================================
+
+Implementar: - RBAC e autorização por projeto. - Hash de senha com
+algoritmo apropriado. - Sessões e refresh tokens protegidos. - Validação
+de entrada. - Proteção contra SQL Injection. - Proteção contra XSS e
+CSRF conforme arquitetura. - CORS restrito. - Rate limiting. - Headers
+de segurança. - HTTPS. - Controle de acesso a anexos. - URLs assinadas
+com expiração. - Validação de MIME type, extensão e tamanho. - Proteção
+de webhooks e validação de assinatura. - Gestão segura de secrets. -
+Logs sem credenciais ou dados sensíveis desnecessários. - Política de
+retenção e descarte. - Backups e restauração testada. - Princípio do
+menor privilégio.
+
+Considerar LGPD: - Minimização de dados. - Finalidade e transparência. -
+Controle de acesso. - Retenção definida. - Processo de atendimento a
+solicitações aplicáveis. - Avaliação de dados pessoais presentes em
+screenshots. - Não compartilhar evidências com IA ou terceiros sem
+avaliação e configuração apropriadas.
+
+======================================================================
+15. EXPERIÊNCIA E DESIGN
+======================================================================
+
+Criar interface corporativa, moderna, responsiva e orientada à
+produtividade.
+
+Diretrizes: - Navegação lateral. - Dashboard claro. - Seletor de projeto
+sempre evidente quando necessário. - Indicação do projeto ativo nas
+telas. - Tabelas com filtros e paginação. - Formulários objetivos. -
+Feedback de sucesso e erro. - Skeleton loading. - Estados vazios. -
+Confirmação para ações destrutivas. - Acessibilidade e navegação por
+teclado. - Tema claro e escuro, se viável. - Layout responsivo.
+
+Telas mínimas: 1. Login. 2. Recuperação de senha. 3. Dashboard. 4.
+Seletor/lista de projetos. 5. Cadastro/edição de projeto. 6. Detalhes do
+projeto. 7. Gestão de membros do projeto. 8. Lista de ocorrências. 9.
+Cadastro de ocorrência. 10. Detalhes da ocorrência. 11. Gestão de
+usuários. 12. Perfil do usuário. 13. Equipes/responsáveis, se adotados.
+14. Categorias e prioridades. 15. Configuração de notificações. 16.
+Histórico de notificações. 17. Auditoria. 18. Relatórios. 19.
+Configurações.
+
+======================================================================
+16. TESTES E CRITÉRIOS DE ACEITAÇÃO
+======================================================================
+
+Criar testes unitários, integração, API e E2E.
+
+Cenários obrigatórios: - Usuário sem login não acessa áreas
+protegidas. - Usuário só acessa projetos autorizados. - Um usuário pode
+participar de dois ou mais projetos com a mesma conta. - Usuário sem
+vínculo não consulta ocorrências do projeto. - Testador registra
+ocorrência no projeto correto. - Backend associa autor pelo usuário
+autenticado. - Envio com projeto não autorizado é rejeitado. - Filtros
+não vazam dados entre projetos. - Anexos só são acessíveis a usuários
+autorizados. - Alteração de status gera histórico. - Notificação não
+bloqueia criação da ocorrência. - Falha do WhatsApp não perde o
+registro. - Retentativa não duplica notificação. - Idempotência impede
+duplicação da ocorrência em reenvio. - Sugestão de projeto pela URL pode
+ser corrigida manualmente. - Extensão funciona com sessão válida e trata
+sessão expirada. - Exportações respeitam permissões.
+
+Critérios de aceite do MVP: 1. Administrador consegue criar usuários e
+projetos. 2. Administrador consegue vincular um usuário a múltiplos
+projetos. 3. Testador consegue autenticar-se. 4. Testador consegue
+selecionar um projeto autorizado. 5. Testador consegue capturar/anexar
+screenshot e descrever o erro. 6. API salva ocorrência e atribui autor
+autenticado. 7. Usuário autorizado consulta a ocorrência. 8. Usuário não
+autorizado não acessa dados do projeto. 9. Histórico registra criação e
+mudanças relevantes. 10. A notificação é processada de forma assíncrona
+e pode permanecer desativada até haver credenciais oficiais.
+
+======================================================================
+17. DOCUMENTAÇÃO OBRIGATÓRIA
+======================================================================
+
+A documentação não é opcional nem deve ser deixada para uma tarefa
+superficial no último dia. Criar e manter a pasta docs/ durante todo o
+desenvolvimento.
+
+Entregar documentação em Markdown, com diagramas Mermaid editáveis.
+Gerar SVG/PNG e PDF consolidado quando houver ferramenta adequada e isso
+não comprometer a editabilidade dos fontes.
+
+17.1. Diagramas de telas e navegação - Sitemap completo. - Diagrama de
+navegação entre telas. - Fluxo de login. - Fluxo de cadastro de
+usuário. - Fluxo de criação e edição de projeto. - Fluxo de associação
+de usuário a múltiplos projetos. - Fluxo de registro de ocorrência pela
+extensão. - Fluxo de acompanhamento e homologação. - Fluxo de
+configuração de notificação. - Wireframes ou diagramas das telas
+principais. - Matriz de telas por perfil de acesso.
+
+17.2. Diagramas clássicos de engenharia - C4: contexto, containers e
+componentes. - Diagrama de arquitetura geral. - Diagrama de
+implantação/deployment. - Diagrama entidade-relacionamento do banco. -
+Diagrama de casos de uso. - Diagramas de sequência para autenticação,
+registro de ocorrência, upload e notificação. - Diagrama de atividades
+do ciclo de vida da ocorrência. - Diagrama de fluxo de dados. - Diagrama
+da extensão Chrome. - Diagrama de filas e workers. - Diagrama CI/CD
+GitHub-Vercel-infraestrutura.
+
+17.3. Documentação técnica - Visão geral e decisões arquiteturais
+(ADRs). - Estrutura de diretórios. - Requisitos funcionais e não
+funcionais. - Modelo de dados e migrations. - Contratos da API. -
+Swagger/OpenAPI. - Autenticação e autorização. - Isolamento por
+projeto. - Extensão e permissões do Chrome. - Integração WhatsApp e
+limitações verificadas. - IA e privacidade. - Variáveis de ambiente. -
+Instalação local. - Docker. - Deploy e rollback. - Backups e
+recuperação. - Monitoramento e troubleshooting. - Testes e cobertura.
+
+17.4. Manuais de uso - Administrador. - Gestor. - Testador. -
+Desenvolvedor. - Instalação e uso da extensão.
+
+17.5. Qualidade documental - Diagramas devem refletir o sistema
+realmente implementado. - Não documentar funcionalidades inexistentes
+como concluídas. - Marcar claramente itens pendentes. - Atualizar
+documentação quando contratos ou telas mudarem. - Gerar índice em
+docs/README.md. - Incluir data e versão nos documentos relevantes.
+
+======================================================================
+18. SKILLS E AGENTES ESPECIALIZADOS PARA TRAE AI
+======================================================================
+
+Usar Agent Skills compatíveis com o padrão SKILL.md quando suportadas
+pela versão instalada do TRAE. Antes de instalar, verificar repositório,
+manutenção, licença, compatibilidade e conteúdo. Não instalar cegamente
+nem conceder permissões excessivas.
+
+Skills/áreas recomendadas: - Arquitetura full stack. - Next.js e
+React. - NestJS. - PostgreSQL e Prisma. - Chrome Extension Manifest
+V3. - Segurança de aplicações. - Testes unitários e E2E com
+Playwright. - BullMQ e Redis. - Integração oficial WhatsApp Business
+Platform. - CI/CD e Vercel. - Documentação técnica e diagramas Mermaid.
+
+Referências para avaliação, não garantias de compatibilidade ou
+endosso: - Fullstack Agent Skills:
+https://github.com/suleyman/fullstack-agent-skills - Browser Extension
+Skills: https://github.com/quangpl/browser-extension-skills - TRAE
+Community Skills: https://github.com/trae-community/trae-skills - Claude
+Skills (avaliar skill NestJS):
+https://github.com/Jeffallan/claude-skills - Gokapso WhatsApp skill
+(orientada à plataforma Kapso; adaptar somente se fizer sentido):
+https://github.com/gokapso/agent-skills/tree/master/skills/integrate-whatsapp -
+BullMQ skill: https://github.com/emirce/skills/tree/main/skills/bullmq
+
+Agentes sugeridos: 1. ARCHITECT AGENT — arquitetura, contratos e
+decisões técnicas. 2. FRONTEND AGENT — Next.js, telas, componentes e
+acessibilidade. 3. BACKEND AGENT — NestJS, regras, API, banco e
+autorização. 4. DATABASE AGENT — modelo relacional, migrations, índices
+e integridade. 5. EXTENSION AGENT — extensão Chrome e captura. 6.
+NOTIFICATION AGENT — filas, webhooks e canais. 7. AI AGENT —
+classificação e duplicidade assistidas. 8. QA AGENT — testes e
+regressão. 9. SECURITY AGENT — revisão de ameaças, permissões e dados.
+10. DEVOPS AGENT — Docker, GitHub Actions, Vercel e infraestrutura. 11.
+DOCUMENTATION AGENT — diagramas, manuais e documentação atualizada.
+
+Regras de colaboração: - O arquiteto coordena padrões e contratos. - Não
+permitir alterações incompatíveis entre agentes. - Definir contratos
+antes de integrações. - Evitar agentes alterando simultaneamente os
+mesmos arquivos. - Exigir revisão e testes. - Registrar decisões e
+bloqueios. - Não simular integração real sem identificar claramente a
+simulação. - Não considerar código gerado como validado sem execução.
+
+======================================================================
+19. PLANO DE EXECUÇÃO
+======================================================================
+
+ETAPA 1 — DIAGNÓSTICO E ARQUITETURA - Inspecionar repositório. -
+Confirmar estado Git. - Apresentar arquitetura. - Apresentar
+estrutura. - Definir modelo ER. - Definir RBAC e isolamento por
+projeto. - Definir contratos da API. - Mapear riscos e custos. - Definir
+estratégia Vercel e serviços externos. - Criar ADRs iniciais.
+
+ETAPA 2 — FUNDAÇÃO - Monorepositório. - TypeScript strict. - Lint e
+format. - Configuração de ambiente. - Docker Compose para
+desenvolvimento. - PostgreSQL e Redis. - CI inicial. - Migrações e seed
+apenas para desenvolvimento.
+
+ETAPA 3 — AUTENTICAÇÃO E AUTORIZAÇÃO - Usuários. - Sessões. - Perfis. -
+Membership por projeto. - Guards e policies. - Testes negativos de
+isolamento.
+
+ETAPA 4 — PROJETOS - CRUD. - Ambientes. - Domínios. - Membros. - Regras
+de acesso. - Testes multi-projeto.
+
+ETAPA 5 — OCORRÊNCIAS - Cadastro. - Listagem. - Detalhes. - Anexos. -
+Comentários. - Status. - Histórico. - Auditoria.
+
+ETAPA 6 — FRONTEND E DASHBOARD - Telas. - Filtros. - Relatórios. -
+Estados de interface. - Testes E2E.
+
+ETAPA 7 — EXTENSÃO CHROME - Login. - Captura. - Recorte/anotação, se
+viável. - Sugestão de projeto por domínio. - Seleção manual. - Envio
+idempotente. - Tratamento de falhas.
+
+ETAPA 8 — NOTIFICAÇÕES - Filas. - Worker. - Adaptador de canais. -
+WhatsApp oficial após validação de elegibilidade e credenciais. -
+Histórico e retentativas.
+
+ETAPA 9 — IA OPCIONAL - Classificação sugerida. - Duplicidade. -
+Resumo. - Validação humana. - Controles de privacidade.
+
+ETAPA 10 — SEGURANÇA E QUALIDADE - Testes completos. - Revisão de
+autorização. - Revisão de upload. - Revisão de secrets. - Testes de
+recuperação. - Correções.
+
+ETAPA 11 — DEPLOY - Preview. - Configuração de produção. - Migrações
+controladas. - Monitoramento. - Backup. - Rollback. - Produção somente
+após autorização.
+
+ETAPA 12 — DOCUMENTAÇÃO E ENTREGA - Atualizar todos os diagramas. -
+Manuais. - OpenAPI. - Runbooks. - PDF consolidado. - Checklist de
+aceite. - Relatório de testes. - Lista de pendências conhecidas.
+
+======================================================================
+20. PROMPT COMPLEMENTAR — ORGANIZAÇÃO DOS AGENTES
+======================================================================
+
+Com base nesta especificação, configure uma equipe de agentes
+especializados, se os recursos da versão do TRAE permitirem.
+
+Crie ou configure: - Architect Agent - Frontend Agent - Backend Agent -
+Database Agent - Extension Agent - Notification Agent - AI Agent - QA
+Agent - Security Agent - DevOps Agent - Documentation Agent
+
+O Architect Agent deve coordenar contratos, arquitetura e dependências.
+Cada agente deve trabalhar em escopo delimitado. Antes de implementar,
+cada agente deve ler esta especificação e os ADRs. Mudanças em contratos
+devem ser comunicadas e revisadas.
+
+Não afirmar que agentes foram criados se a ferramenta não oferecer essa
+capacidade. Nesse caso, documentar a configuração manual necessária e
+seguir com o agente principal de forma disciplinada.
+
+======================================================================
+21. PROMPT DE PRIMEIRA EXECUÇÃO
+======================================================================
+
+Leia integralmente este documento e inspecione o repositório oficial:
+https://github.com/alexsandrosodre/qualitytest.git
+
+Não comece criando telas aleatórias nem reescreva o projeto sem
+diagnóstico.
+
+Primeiro entregue: 1. Diagnóstico do repositório e da branch atual. 2.
+Arquitetura proposta. 3. Estrutura de diretórios. 4. Diagrama C4. 5.
+Diagrama ER. 6. Sitemap e diagrama de telas. 7. Matriz de permissões. 8.
+Estratégia de isolamento por projeto. 9. Contratos principais da API.
+10. Estratégia de extensão Chrome. 11. Estratégia de notificações e
+limitações atuais do WhatsApp. 12. Arquitetura de deploy com Vercel e
+serviços externos. 13. Plano de testes. 14. Riscos, custos e
+dependências externas. 15. Plano incremental com critérios de aceite.
+
+Após a apresentação, implemente a fundação em uma branch de trabalho,
+preservando o conteúdo existente. Não faça deploy de produção sem
+autorização.
+
+======================================================================
+22. CHECKLIST FINAL DE ENTREGA
+======================================================================
+
+Produto: [ ] Cadastro e gestão de usuários. [ ] Usuário participa de
+múltiplos projetos com uma única conta. [ ] Cadastro e gestão de
+projetos. [ ] Isolamento de dados por projeto validado no backend. [ ]
+Seleção de projeto na extensão. [ ] Sugestão de projeto por domínio, com
+confirmação. [ ] Registro de ocorrência e screenshot. [ ] Identificação
+automática do autor autenticado. [ ] Comentários e histórico. [ ]
+Atribuição e fluxo de status. [ ] Dashboard e relatórios autorizados. [
+] Auditoria. [ ] Notificações assíncronas. [ ] Integração WhatsApp
+oficial validada ou pendência claramente documentada. [ ] IA opcional
+com validação humana.
+
+Engenharia: [ ] Typecheck. [ ] Lint. [ ] Testes unitários. [ ] Testes de
+integração. [ ] Testes E2E. [ ] Testes de isolamento entre projetos. [ ]
+Testes de segurança. [ ] Migrations revisadas. [ ] Backups e restauração
+documentados. [ ] CI funcionando. [ ] Preview validado. [ ] Deploy de
+produção autorizado.
+
+Documentação: [ ] README. [ ] Arquitetura. [ ] C4. [ ] ER. [ ] Sitemap.
+[ ] Diagramas de telas. [ ] Casos de uso. [ ] Sequência. [ ] Atividades.
+[ ] Deployment. [ ] API OpenAPI. [ ] Manual do administrador. [ ] Manual
+do gestor. [ ] Manual do testador. [ ] Manual do desenvolvedor. [ ] Guia
+da extensão. [ ] Guia de instalação e operação. [ ] Guia de deploy e
+rollback. [ ] PDF consolidado. [ ] Pendências e limitações registradas.
+
+======================================================================
+23. ORIENTAÇÃO FINAL
+======================================================================
+
+O Quality Test deve ser construído como uma plataforma corporativa
+única, com múltiplos projetos isolados, usuários compartilhados entre
+projetos mediante permissões explícitas e rastreabilidade completa.
+
+O requisito central recém-reforçado é: UM USUÁRIO PODE PARTICIPAR DE
+VÁRIOS PROJETOS COM A MESMA CONTA, E CADA OCORRÊNCIA DEVE SER
+DIRECIONADA A UM PROJETO ESPECÍFICO, SEM MISTURAR DADOS, EQUIPES,
+RELATÓRIOS OU NOTIFICAÇÕES.
+
+Exemplos iniciais: - Intranet Maricá. - Portal da Tecnologia.
+
+O testador seleciona o projeto ao registrar a ocorrência. A extensão
+pode sugerir o projeto pela URL, mas deve permitir confirmação ou
+correção. O backend valida o vínculo e registra o autor autenticado.
+
+A prioridade é entregar primeiro um núcleo confiável de usuários,
+projetos, permissões, ocorrências, evidências e auditoria. WhatsApp e IA
+são módulos desacoplados e não podem comprometer o funcionamento básico.
+
+A documentação com diagramas de telas e diagramas clássicos de
+engenharia é parte obrigatória da entrega, deve acompanhar o
+desenvolvimento e representar fielmente o sistema implementado.
