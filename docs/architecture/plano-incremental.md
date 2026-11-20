@@ -2,7 +2,7 @@
 
 **Versão:** 1.0
 **Data:** 21/11/2026
-**Status:** Planejado (não implementado)
+**Status:** Em execução (Etapas 1 e 2 concluídas; Etapa 3 em andamento)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Detalhar as **12 etapas** do plano de execução (seção 19 da especificação mestra), com objetivo, entregáveis e critérios de aceite de cada etapa.
 
-> **Estado atual:** **Etapa 1 — Em andamento**. As demais etapas estão **Planejadas**.
+> **Estado atual:** **Etapa 3 — AUTENTICAÇÃO E AUTORIZAÇÃO — Em andamento**. As Etapas 1 e 2 estão **Concluídas**; as demais estão **Planejadas**.
 
 ---
 
@@ -32,7 +32,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 1 — DIAGNÓSTICO E ARQUITETURA
 
-**Status:** Em andamento
+**Status:** Concluída
 
 **Objetivo:** Inspecionar o repositório e o ambiente, e produzir a base arquitetural do produto.
 
@@ -56,7 +56,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 2 — FUNDAÇÃO
 
-**Status:** Planejado
+**Status:** Concluída (pendência: validação de migration/seed com Docker não executada)
 
 **Objetivo:** Preparar a base técnica do monorepositório.
 
@@ -68,7 +68,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 3 — AUTENTICAÇÃO E AUTORIZAÇÃO
 
-**Status:** Planejado
+**Status:** Em andamento
 
 **Objetivo:** Implementar identidade, sessões e controle de acesso.
 

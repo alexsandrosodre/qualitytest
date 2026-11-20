@@ -12,7 +12,9 @@
 import path from 'node:path';
 
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { hash as argon2Hash } from 'argon2';
+
+import { ARGON2_OPTIONS } from '../src/common/password/argon2-options';
 
 // Carrega o `.env` da raiz do monorepo quando existir (node >= 20.12).
 // O arquivo é opcional: em CI/pipelines as variáveis vêm do próprio ambiente.
@@ -43,8 +45,6 @@ const SEED_PROJECTS: readonly SeedProject[] = [
   },
 ];
 
-const BCRYPT_ROUNDS = 12;
-
 function readAdminPassword(): string {
   const password = process.env.SEED_ADMIN_PASSWORD;
 
@@ -67,7 +67,7 @@ function readAdminPassword(): string {
 async function main(): Promise<void> {
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@qualitytest.local';
   const adminPassword = readAdminPassword();
-  const passwordHash = await bcrypt.hash(adminPassword, BCRYPT_ROUNDS);
+  const passwordHash = await argon2Hash(adminPassword, ARGON2_OPTIONS);
 
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },

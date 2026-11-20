@@ -3,8 +3,10 @@
 Plataforma corporativa para centralizar o registro e o acompanhamento de testes, defeitos,
 inconsistências e problemas identificados durante a homologação dos sistemas.
 
-> **Estado atual: Etapa 2 (FUNDAÇÃO) concluída.**
-> Não existem telas de produto, autenticação ou regras de negócio implementadas ainda.
+> **Estado atual: Etapa 3 (AUTENTICAÇÃO E AUTORIZAÇÃO) em andamento.**
+> A API já expõe login/logout/refresh, gestão de usuários e vínculos por projeto (RBAC +
+> isolamento). Telas de produto, CRUD de projetos/ocorrências e demais funcionalidades vêm nas
+> próximas etapas.
 > A especificação mestra está em `Quality_Test_Especificacao_Mestre_GitHub_Vercel_v4.txt` e a
 > documentação de arquitetura em `docs/architecture/`.
 
@@ -118,6 +120,49 @@ Invoke-RestMethod http://localhost:3333/api/health
 
 ---
 
+## Autenticação e autorização
+
+A autenticação é **própria** (não gerenciada). O transporte é via cabeçalho
+`Authorization: Bearer <accessToken>` — **sem cookies**.
+
+- **Access token:** JWT de vida curta (`JWT_ACCESS_TTL`, padrão `15m`) assinado com `JWT_SECRET`.
+  Payload mínimo: `sub` (id do usuário) + perfil global (`globalRole`). Permissões de projeto são
+  resolvidas por requisição a partir de `ProjectMember`.
+- **Refresh token:** string opaca (`JWT_REFRESH_TTL`, padrão `7d`), persistida **apenas como hash
+  SHA-256** em `RefreshSession`. Há **rotação** a cada refresh e **revogação** no logout.
+- **Senhas:** hash com **argon2id**. Nunca são armazenadas em texto puro nem retornadas nas respostas.
+- **Redefinição de senha:** o token de uso único é persistido (como hash) reutilizando
+  `RefreshSession`. Nesta etapa **não há provedor de e-mail**: o evento é apenas auditado.
+
+### Endpoints
+
+| Método | Rota | Descrição |
+|---|---|---|
+| POST | `/api/auth/login` | Autentica e emite access + refresh token |
+| POST | `/api/auth/refresh` | Rotaciona o refresh token |
+| POST | `/api/auth/logout` | Revoga o refresh token informado |
+| GET | `/api/auth/me` | Usuário autenticado e seus vínculos ativos |
+| POST | `/api/auth/forgot-password` | Solicita redefinição (resposta sempre genérica) |
+| POST | `/api/auth/reset-password` | Redefine a senha via token de uso único |
+| POST | `/api/auth/change-password` | Altera a senha do usuário autenticado |
+| POST/GET | `/api/users` | Gestão de usuários (somente `ADMINISTRADOR`) |
+| GET/PATCH | `/api/users/:id` | O próprio perfil (ou `ADMINISTRADOR`) |
+| PATCH | `/api/users/:id/status` | Ativa/desativa usuário (somente `ADMINISTRADOR`) |
+| POST/GET | `/api/projects/:projectId/members` | Vínculos do projeto (membro ativo ou `ADMINISTRADOR`) |
+| PATCH/DELETE | `/api/projects/:projectId/members/:userId` | Altera papel / desativa vínculo (`ADMINISTRADOR` ou `GESTOR`) |
+
+### Controle de acesso (RBAC + isolamento por projeto)
+
+- **Perfil global** (`GlobalRole`): `ADMINISTRADOR` acessa qualquer projeto; os demais perfis
+  dependem de vínculo.
+- **Vínculo por projeto** (`ProjectMember.role`): `GESTOR`, `TESTADOR` ou `DESENVOLVEDOR`.
+- O `projectId` enviado pelo cliente é tratado como **intenção** e sempre validado contra um
+  `ProjectMember` **ATIVO** — nunca é fonte de autorização.
+- Rate limiting global (`THROTTLE_TTL`/`THROTTLE_LIMIT`) com limites mais restritos em
+  login/refresh/redefinição de senha.
+
+---
+
 ## Scripts da raiz
 
 | Script | Descrição |
@@ -145,6 +190,9 @@ Todas as variáveis estão documentadas em `.env.example`. Destaques:
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB` / `REDIS_PASSWORD` | Conexão Redis (BullMQ) |
 | `API_PORT` | Porta da API (padrão 3333) |
 | `CORS_ORIGIN` | Origens permitidas no CORS, separadas por vírgula |
+| `JWT_SECRET` | Segredo de assinatura do access token (obrigatório) |
+| `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | Tempos de vida do access/refresh token |
+| `THROTTLE_TTL` / `THROTTLE_LIMIT` | Rate limiting global (janela em segundos / requisições) |
 | `NEXT_PUBLIC_API_URL` | URL da API usada pelo frontend |
 | `MINIO_*` / `S3_*` | Storage S3 compatível (desenvolvimento) |
 | `SEED_ADMIN_PASSWORD` | Senha do administrador criado pelo seed (nunca versionar) |
@@ -162,6 +210,6 @@ O pipeline não faz deploy e não utiliza secrets.
 
 ## Fora do escopo desta etapa
 
-Autenticação, autorização (RBAC por projeto), CRUD de projetos e ocorrências, anexos,
-comentários, dashboard, extensão do Chrome, notificações WhatsApp e IA são entregues nas etapas
-seguintes (ver seção 19 da especificação e `docs/architecture/plano-incremental.md`).
+CRUD de projetos e ocorrências, anexos, comentários, dashboard, extensão do Chrome, notificações
+WhatsApp e IA são entregues nas etapas seguintes (ver seção 19 da especificação e
+`docs/architecture/plano-incremental.md`).
