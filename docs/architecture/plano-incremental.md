@@ -2,7 +2,7 @@
 
 **Versão:** 1.0
 **Data:** 21/11/2026
-**Status:** Em execução (Etapas 1 e 2 concluídas; Etapa 3 em andamento)
+**Status:** Em execução (Etapas 1, 2 e 3 concluídas; Etapa 4 em andamento)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Detalhar as **12 etapas** do plano de execução (seção 19 da especificação mestra), com objetivo, entregáveis e critérios de aceite de cada etapa.
 
-> **Estado atual:** **Etapa 3 — AUTENTICAÇÃO E AUTORIZAÇÃO — Em andamento**. As Etapas 1 e 2 estão **Concluídas**; as demais estão **Planejadas**.
+> **Estado atual:** **Etapa 4 — PROJETOS — Em andamento**. As Etapas 1, 2 e 3 estão **Concluídas**; as demais estão **Planejadas**.
 
 ---
 
@@ -68,7 +68,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 3 — AUTENTICAÇÃO E AUTORIZAÇÃO
 
-**Status:** Em andamento
+**Status:** Concluída
 
 **Objetivo:** Implementar identidade, sessões e controle de acesso.
 
@@ -80,7 +80,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 4 — PROJETOS
 
-**Status:** Planejado
+**Status:** Em andamento
 
 **Objetivo:** Implementar o módulo de projetos.
 
@@ -190,10 +190,10 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 | Etapa | Nome | Status |
 |---|---|---|
-| 1 | Diagnóstico e Arquitetura | Em andamento |
-| 2 | Fundação | Planejado |
-| 3 | Autenticação e Autorização | Planejado |
-| 4 | Projetos | Planejado |
+| 1 | Diagnóstico e Arquitetura | Concluída |
+| 2 | Fundação | Concluída |
+| 3 | Autenticação e Autorização | Concluída |
+| 4 | Projetos | Em andamento |
 | 5 | Ocorrências | Planejado |
 | 6 | Frontend e Dashboard | Planejado |
 | 7 | Extensão Chrome | Planejado |

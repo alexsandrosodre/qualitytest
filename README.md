@@ -3,10 +3,10 @@
 Plataforma corporativa para centralizar o registro e o acompanhamento de testes, defeitos,
 inconsistências e problemas identificados durante a homologação dos sistemas.
 
-> **Estado atual: Etapa 3 (AUTENTICAÇÃO E AUTORIZAÇÃO) em andamento.**
-> A API já expõe login/logout/refresh, gestão de usuários e vínculos por projeto (RBAC +
-> isolamento). Telas de produto, CRUD de projetos/ocorrências e demais funcionalidades vêm nas
-> próximas etapas.
+> **Estado atual: Etapa 4 (PROJETOS) em andamento.**
+> A API já expõe login/logout/refresh, gestão de usuários, vínculos por projeto e o CRUD de
+> projetos/ambientes/domínios (RBAC + isolamento). Telas de produto, ocorrências e demais
+> funcionalidades vêm nas próximas etapas.
 > A especificação mestra está em `Quality_Test_Especificacao_Mestre_GitHub_Vercel_v4.txt` e a
 > documentação de arquitetura em `docs/architecture/`.
 
@@ -148,6 +148,13 @@ A autenticação é **própria** (não gerenciada). O transporte é via cabeçal
 | POST/GET | `/api/users` | Gestão de usuários (somente `ADMINISTRADOR`) |
 | GET/PATCH | `/api/users/:id` | O próprio perfil (ou `ADMINISTRADOR`) |
 | PATCH | `/api/users/:id/status` | Ativa/desativa usuário (somente `ADMINISTRADOR`) |
+| POST/GET | `/api/projects` | Cria (só `ADMINISTRADOR`) / lista projetos (escopo por vínculo) |
+| GET/PATCH | `/api/projects/:projectId` | Detalhe / edição do projeto (membro ativo, edição `ADMINISTRADOR` ou `GESTOR`) |
+| PATCH | `/api/projects/:projectId/status` | Ativa/desativa projeto (só `ADMINISTRADOR`) |
+| POST/GET | `/api/projects/:projectId/environments` | Ambientes do projeto (criação `ADMINISTRADOR`/`GESTOR`) |
+| GET/PATCH/DELETE | `/api/projects/:projectId/environments/:environmentId` | Detalhe / edição / desativação lógica do ambiente |
+| POST/GET | `/api/projects/:projectId/domains` | Mapeamentos de domínio (criação `ADMINISTRADOR`/`GESTOR`) |
+| PATCH/DELETE | `/api/projects/:projectId/domains/:mappingId` | Edição / remoção do mapeamento de domínio |
 | POST/GET | `/api/projects/:projectId/members` | Vínculos do projeto (membro ativo ou `ADMINISTRADOR`) |
 | PATCH/DELETE | `/api/projects/:projectId/members/:userId` | Altera papel / desativa vínculo (`ADMINISTRADOR` ou `GESTOR`) |
 
@@ -210,6 +217,6 @@ O pipeline não faz deploy e não utiliza secrets.
 
 ## Fora do escopo desta etapa
 
-CRUD de projetos e ocorrências, anexos, comentários, dashboard, extensão do Chrome, notificações
+CRUD de ocorrências, anexos, comentários, dashboard, extensão do Chrome, notificações
 WhatsApp e IA são entregues nas etapas seguintes (ver seção 19 da especificação e
 `docs/architecture/plano-incremental.md`).

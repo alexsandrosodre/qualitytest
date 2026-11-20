@@ -10,7 +10,10 @@ import { parseDurationToSeconds, validateEnv } from './common/config/env';
 import { TokensModule } from './common/tokens/tokens.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ProjectDomainsModule } from './project-domains/project-domains.module';
+import { ProjectEnvironmentsModule } from './project-environments/project-environments.module';
 import { ProjectMembersModule } from './project-members/project-members.module';
+import { ProjectsModule } from './projects/projects.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -37,7 +40,10 @@ import { UsersModule } from './users/users.module';
     HealthModule,
     AuthModule,
     UsersModule,
+    ProjectsModule,
     ProjectMembersModule,
+    ProjectEnvironmentsModule,
+    ProjectDomainsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
