@@ -2,7 +2,7 @@
 
 **Versão:** 1.0
 **Data:** 21/11/2026
-**Status:** Em execução (Etapas 1, 2 e 3 concluídas; Etapa 4 em andamento)
+**Status:** Em execução (Etapas 1, 2, 3, 4 e 5 concluídas; Etapa 6 em andamento)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Detalhar as **12 etapas** do plano de execução (seção 19 da especificação mestra), com objetivo, entregáveis e critérios de aceite de cada etapa.
 
-> **Estado atual:** **Etapa 4 — PROJETOS — Em andamento**. As Etapas 1, 2 e 3 estão **Concluídas**; as demais estão **Planejadas**.
+> **Estado atual:** **Etapa 6 — FRONTEND E DASHBOARD — Em andamento**. As Etapas 1, 2, 3, 4 e 5 estão **Concluídas**; as demais estão **Planejadas**.
 
 ---
 
@@ -80,7 +80,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 4 — PROJETOS
 
-**Status:** Em andamento
+**Status:** Concluída
 
 **Objetivo:** Implementar o módulo de projetos.
 
@@ -92,7 +92,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 5 — OCORRÊNCIAS
 
-**Status:** Planejado
+**Status:** Concluída
 
 **Objetivo:** Implementar o núcleo de ocorrências.
 
@@ -193,8 +193,8 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 | 1 | Diagnóstico e Arquitetura | Concluída |
 | 2 | Fundação | Concluída |
 | 3 | Autenticação e Autorização | Concluída |
-| 4 | Projetos | Em andamento |
-| 5 | Ocorrências | Planejado |
+| 4 | Projetos | Concluída |
+| 5 | Ocorrências | Concluída |
 | 6 | Frontend e Dashboard | Planejado |
 | 7 | Extensão Chrome | Planejado |
 | 8 | Notificações | Planejado |

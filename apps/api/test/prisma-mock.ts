@@ -9,8 +9,15 @@ import { randomUUID } from 'node:crypto';
 import {
   EnvironmentType,
   GlobalRole,
+  OccurrenceCategory,
+  OccurrencePriority,
+  OccurrenceStatus,
   RegistrationStatus,
   type AuditLog,
+  type Occurrence,
+  type OccurrenceAttachment,
+  type OccurrenceComment,
+  type OccurrenceHistory,
   type Project,
   type ProjectDomainMapping,
   type ProjectEnvironment,
@@ -54,6 +61,57 @@ export interface SeedDomainMappingInput {
   domainPattern: string;
   environmentId: string;
   enabled?: boolean;
+}
+
+export interface SeedOccurrenceInput {
+  projectId: string;
+  reporterUserId: string;
+  title: string;
+  description?: string | null;
+  categoryId?: OccurrenceCategory;
+  priority?: OccurrencePriority;
+  status?: OccurrenceStatus;
+  publicCode?: string;
+  environmentId?: string | null;
+  assigneeUserId?: string | null;
+  idempotencyKey?: string | null;
+}
+
+export interface SeedOccurrenceCommentInput {
+  occurrenceId: string;
+  userId: string;
+  content: string;
+}
+
+export interface SeedOccurrenceAttachmentInput {
+  occurrenceId: string;
+  storageKey: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  uploadedBy: string;
+}
+
+/** Filtro simplificado de `Occurrence` usado pelo serviço da Etapa 5. */
+interface OccurrenceWhere {
+  projectId?: string;
+  environmentId?: string;
+  categoryId?: OccurrenceCategory;
+  priority?: OccurrencePriority;
+  status?: OccurrenceStatus;
+  assigneeUserId?: string;
+  reporterUserId?: string;
+  createdAt?: { gte?: Date; lte?: Date };
+  OR?: Array<{
+    publicCode?: { contains: string };
+    title?: { contains: string };
+    description?: { contains: string };
+  }>;
+}
+
+interface OccurrenceOrderBy {
+  createdAt?: 'asc' | 'desc';
+  updatedAt?: 'asc' | 'desc';
 }
 
 /** Filtro simplificado de `Project` usado pelos serviços da Etapa 4. */
@@ -214,6 +272,100 @@ export interface PrismaMock {
       };
     }): Promise<AuditLog>;
   };
+  occurrence: {
+    findUnique(args: {
+      where: { id: string } | { publicCode: string } | { idempotencyKey: string };
+    }): Promise<Occurrence | null>;
+    findMany(args: {
+      where?: OccurrenceWhere;
+      skip?: number;
+      take?: number;
+      orderBy?: OccurrenceOrderBy;
+    }): Promise<Occurrence[]>;
+    count(args?: { where?: OccurrenceWhere }): Promise<number>;
+    create(args: {
+      data: {
+        publicCode: string;
+        idempotencyKey?: string | null;
+        projectId: string;
+        environmentId?: string | null;
+        title: string;
+        description?: string | null;
+        categoryId: OccurrenceCategory;
+        priority: OccurrencePriority;
+        status?: OccurrenceStatus;
+        reporterUserId: string;
+        assigneeUserId?: string | null;
+        pageUrl?: string | null;
+        pageTitle?: string | null;
+        browserInfo?: string | null;
+        operatingSystemInfo?: string | null;
+        viewportInfo?: string | null;
+      };
+    }): Promise<Occurrence>;
+    update(args: {
+      where: { id: string };
+      data: Partial<{
+        environmentId: string | null;
+        title: string;
+        description: string | null;
+        categoryId: OccurrenceCategory;
+        priority: OccurrencePriority;
+        status: OccurrenceStatus;
+        assigneeUserId: string | null;
+        pageUrl: string | null;
+        pageTitle: string | null;
+        browserInfo: string | null;
+        operatingSystemInfo: string | null;
+        viewportInfo: string | null;
+      }>;
+    }): Promise<Occurrence>;
+  };
+  occurrenceComment: {
+    findUnique(args: { where: { id: string } }): Promise<OccurrenceComment | null>;
+    findMany(args: {
+      where: { occurrenceId: string };
+      orderBy?: { createdAt?: 'asc' | 'desc' };
+    }): Promise<OccurrenceComment[]>;
+    create(args: {
+      data: { occurrenceId: string; userId: string; content: string };
+    }): Promise<OccurrenceComment>;
+    update(args: { where: { id: string }; data: { content: string } }): Promise<OccurrenceComment>;
+    delete(args: { where: { id: string } }): Promise<OccurrenceComment>;
+  };
+  occurrenceAttachment: {
+    findUnique(args: { where: { id: string } }): Promise<OccurrenceAttachment | null>;
+    findMany(args: {
+      where: { occurrenceId: string };
+      orderBy?: { createdAt?: 'asc' | 'desc' };
+    }): Promise<OccurrenceAttachment[]>;
+    create(args: {
+      data: {
+        occurrenceId: string;
+        storageKey: string;
+        fileName: string;
+        mimeType: string;
+        size: number;
+        uploadedBy: string;
+      };
+    }): Promise<OccurrenceAttachment>;
+    delete(args: { where: { id: string } }): Promise<OccurrenceAttachment>;
+  };
+  occurrenceHistory: {
+    findMany(args: {
+      where: { occurrenceId: string };
+      orderBy?: { createdAt?: 'asc' | 'desc' };
+    }): Promise<OccurrenceHistory[]>;
+    create(args: {
+      data: {
+        occurrenceId: string;
+        actorUserId: string;
+        action: string;
+        previousValue?: string | null;
+        newValue?: string | null;
+      };
+    }): Promise<OccurrenceHistory>;
+  };
   $queryRaw: () => Promise<unknown[]>;
   /** Dados brutos para asserções em testes. */
   state: {
@@ -224,12 +376,19 @@ export interface PrismaMock {
     domains: ProjectDomainMapping[];
     sessions: RefreshSession[];
     auditLogs: AuditLog[];
+    occurrences: Occurrence[];
+    comments: OccurrenceComment[];
+    attachments: OccurrenceAttachment[];
+    history: OccurrenceHistory[];
   };
   seedUser(input: SeedUserInput): User;
   seedProject(input: SeedProjectInput): Project;
   seedMember(input: SeedMemberInput): ProjectMember;
   seedEnvironment(input: SeedEnvironmentInput): ProjectEnvironment;
   seedDomainMapping(input: SeedDomainMappingInput): ProjectDomainMapping;
+  seedOccurrence(input: SeedOccurrenceInput): Occurrence;
+  seedOccurrenceComment(input: SeedOccurrenceCommentInput): OccurrenceComment;
+  seedOccurrenceAttachment(input: SeedOccurrenceAttachmentInput): OccurrenceAttachment;
 }
 
 function clone<T>(value: T): T {
@@ -302,6 +461,64 @@ function matchProjectWhere(
   return true;
 }
 
+function matchOccurrenceWhere(occurrence: Occurrence, where: OccurrenceWhere | undefined): boolean {
+  if (where === undefined) {
+    return true;
+  }
+
+  if (where.projectId !== undefined && occurrence.projectId !== where.projectId) {
+    return false;
+  }
+  if (where.environmentId !== undefined && occurrence.environmentId !== where.environmentId) {
+    return false;
+  }
+  if (where.categoryId !== undefined && occurrence.categoryId !== where.categoryId) {
+    return false;
+  }
+  if (where.priority !== undefined && occurrence.priority !== where.priority) {
+    return false;
+  }
+  if (where.status !== undefined && occurrence.status !== where.status) {
+    return false;
+  }
+  if (where.assigneeUserId !== undefined && occurrence.assigneeUserId !== where.assigneeUserId) {
+    return false;
+  }
+  if (where.reporterUserId !== undefined && occurrence.reporterUserId !== where.reporterUserId) {
+    return false;
+  }
+
+  if (where.createdAt !== undefined) {
+    if (where.createdAt.gte !== undefined && occurrence.createdAt.getTime() < where.createdAt.gte.getTime()) {
+      return false;
+    }
+    if (where.createdAt.lte !== undefined && occurrence.createdAt.getTime() > where.createdAt.lte.getTime()) {
+      return false;
+    }
+  }
+
+  if (where.OR !== undefined) {
+    const matchesText = where.OR.some((condition) => {
+      const code = condition.publicCode?.contains;
+      const title = condition.title?.contains;
+      const description = condition.description?.contains;
+
+      return (
+        (code !== undefined && occurrence.publicCode.toLowerCase().includes(code.toLowerCase())) ||
+        (title !== undefined && occurrence.title.toLowerCase().includes(title.toLowerCase())) ||
+        (description !== undefined &&
+          (occurrence.description ?? '').toLowerCase().includes(description.toLowerCase()))
+      );
+    });
+
+    if (!matchesText) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export function createPrismaMock(): PrismaMock {
   const users: User[] = [];
   const projects: Project[] = [];
@@ -310,6 +527,10 @@ export function createPrismaMock(): PrismaMock {
   const domains: ProjectDomainMapping[] = [];
   const sessions: RefreshSession[] = [];
   const auditLogs: AuditLog[] = [];
+  const occurrences: Occurrence[] = [];
+  const comments: OccurrenceComment[] = [];
+  const attachments: OccurrenceAttachment[] = [];
+  const history: OccurrenceHistory[] = [];
 
   function seedUser(input: SeedUserInput): User {
     const now = new Date();
@@ -380,6 +601,62 @@ export function createPrismaMock(): PrismaMock {
     };
     domains.push(mapping);
     return mapping;
+  }
+
+  function seedOccurrence(input: SeedOccurrenceInput): Occurrence {
+    const now = new Date();
+    const occurrence: Occurrence = {
+      id: randomUUID(),
+      publicCode: input.publicCode ?? `QT-${String(occurrences.length + 1).padStart(6, '0')}`,
+      idempotencyKey: input.idempotencyKey ?? null,
+      projectId: input.projectId,
+      environmentId: input.environmentId ?? null,
+      title: input.title,
+      description: input.description ?? null,
+      categoryId: input.categoryId ?? OccurrenceCategory.ERRO_FUNCIONAL,
+      priority: input.priority ?? OccurrencePriority.MEDIA,
+      status: input.status ?? OccurrenceStatus.ABERTO,
+      reporterUserId: input.reporterUserId,
+      assigneeUserId: input.assigneeUserId ?? null,
+      pageUrl: null,
+      pageTitle: null,
+      browserInfo: null,
+      operatingSystemInfo: null,
+      viewportInfo: null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    occurrences.push(occurrence);
+    return occurrence;
+  }
+
+  function seedOccurrenceComment(input: SeedOccurrenceCommentInput): OccurrenceComment {
+    const now = new Date();
+    const comment: OccurrenceComment = {
+      id: randomUUID(),
+      occurrenceId: input.occurrenceId,
+      userId: input.userId,
+      content: input.content,
+      createdAt: now,
+      updatedAt: now,
+    };
+    comments.push(comment);
+    return comment;
+  }
+
+  function seedOccurrenceAttachment(input: SeedOccurrenceAttachmentInput): OccurrenceAttachment {
+    const attachment: OccurrenceAttachment = {
+      id: randomUUID(),
+      occurrenceId: input.occurrenceId,
+      storageKey: input.storageKey,
+      fileName: input.fileName,
+      mimeType: input.mimeType,
+      size: input.size,
+      uploadedBy: input.uploadedBy,
+      createdAt: new Date(),
+    };
+    attachments.push(attachment);
+    return attachment;
   }
 
   const mock: PrismaMock = {
@@ -700,17 +977,236 @@ export function createPrismaMock(): PrismaMock {
       },
     },
 
+    occurrence: {
+      async findUnique(args) {
+        const where = args.where;
+        const occurrence =
+          'id' in where
+            ? occurrences.find((candidate) => candidate.id === where.id)
+            : 'publicCode' in where
+              ? occurrences.find((candidate) => candidate.publicCode === where.publicCode)
+              : occurrences.find((candidate) => candidate.idempotencyKey === where.idempotencyKey);
+        return occurrence === undefined ? null : clone(occurrence);
+      },
+
+      async findMany(args) {
+        const filtered = occurrences.filter((occurrence) =>
+          matchOccurrenceWhere(occurrence, args.where),
+        );
+        const field = args.orderBy?.updatedAt !== undefined ? 'updatedAt' : 'createdAt';
+        const direction =
+          args.orderBy?.updatedAt ?? args.orderBy?.createdAt ?? ('desc' as 'asc' | 'desc');
+        const sorted = [...filtered].sort((a, b) => {
+          const aTime = field === 'updatedAt' ? a.updatedAt.getTime() : a.createdAt.getTime();
+          const bTime = field === 'updatedAt' ? b.updatedAt.getTime() : b.createdAt.getTime();
+          return direction === 'asc' ? aTime - bTime : bTime - aTime;
+        });
+        const skip = args.skip ?? 0;
+        const take = args.take ?? sorted.length;
+        return clone(sorted.slice(skip, skip + take));
+      },
+
+      async count(args) {
+        return occurrences.filter((occurrence) => matchOccurrenceWhere(occurrence, args?.where))
+          .length;
+      },
+
+      async create(args) {
+        const now = new Date();
+        const occurrence: Occurrence = {
+          id: randomUUID(),
+          publicCode: args.data.publicCode,
+          idempotencyKey: args.data.idempotencyKey ?? null,
+          projectId: args.data.projectId,
+          environmentId: args.data.environmentId ?? null,
+          title: args.data.title,
+          description: args.data.description ?? null,
+          categoryId: args.data.categoryId,
+          priority: args.data.priority,
+          status: args.data.status ?? OccurrenceStatus.ABERTO,
+          reporterUserId: args.data.reporterUserId,
+          assigneeUserId: args.data.assigneeUserId ?? null,
+          pageUrl: args.data.pageUrl ?? null,
+          pageTitle: args.data.pageTitle ?? null,
+          browserInfo: args.data.browserInfo ?? null,
+          operatingSystemInfo: args.data.operatingSystemInfo ?? null,
+          viewportInfo: args.data.viewportInfo ?? null,
+          createdAt: now,
+          updatedAt: now,
+        };
+        occurrences.push(occurrence);
+        return clone(occurrence);
+      },
+
+      async update(args) {
+        const index = occurrences.findIndex((candidate) => candidate.id === args.where.id);
+        const current = occurrences[index];
+        if (index === -1 || current === undefined) {
+          throw new Error(`Ocorrência não encontrada no mock: ${args.where.id}`);
+        }
+        const updated: Occurrence = { ...current, ...args.data, updatedAt: new Date() };
+        occurrences[index] = updated;
+        return clone(updated);
+      },
+    },
+
+    occurrenceComment: {
+      async findUnique(args) {
+        const comment = comments.find((candidate) => candidate.id === args.where.id);
+        return comment === undefined ? null : clone(comment);
+      },
+
+      async findMany(args) {
+        const filtered = comments.filter(
+          (comment) => comment.occurrenceId === args.where.occurrenceId,
+        );
+        const direction = args.orderBy?.createdAt ?? 'asc';
+        const sorted = [...filtered].sort((a, b) =>
+          direction === 'asc'
+            ? a.createdAt.getTime() - b.createdAt.getTime()
+            : b.createdAt.getTime() - a.createdAt.getTime(),
+        );
+        return clone(sorted);
+      },
+
+      async create(args) {
+        const now = new Date();
+        const comment: OccurrenceComment = {
+          id: randomUUID(),
+          occurrenceId: args.data.occurrenceId,
+          userId: args.data.userId,
+          content: args.data.content,
+          createdAt: now,
+          updatedAt: now,
+        };
+        comments.push(comment);
+        return clone(comment);
+      },
+
+      async update(args) {
+        const index = comments.findIndex((candidate) => candidate.id === args.where.id);
+        const current = comments[index];
+        if (index === -1 || current === undefined) {
+          throw new Error(`Comentário não encontrado no mock: ${args.where.id}`);
+        }
+        const updated: OccurrenceComment = {
+          ...current,
+          content: args.data.content,
+          updatedAt: new Date(),
+        };
+        comments[index] = updated;
+        return clone(updated);
+      },
+
+      async delete(args) {
+        const index = comments.findIndex((candidate) => candidate.id === args.where.id);
+        const current = comments[index];
+        if (index === -1 || current === undefined) {
+          throw new Error(`Comentário não encontrado no mock: ${args.where.id}`);
+        }
+        comments.splice(index, 1);
+        return clone(current);
+      },
+    },
+
+    occurrenceAttachment: {
+      async findUnique(args) {
+        const attachment = attachments.find((candidate) => candidate.id === args.where.id);
+        return attachment === undefined ? null : clone(attachment);
+      },
+
+      async findMany(args) {
+        const filtered = attachments.filter(
+          (attachment) => attachment.occurrenceId === args.where.occurrenceId,
+        );
+        const direction = args.orderBy?.createdAt ?? 'asc';
+        const sorted = [...filtered].sort((a, b) =>
+          direction === 'asc'
+            ? a.createdAt.getTime() - b.createdAt.getTime()
+            : b.createdAt.getTime() - a.createdAt.getTime(),
+        );
+        return clone(sorted);
+      },
+
+      async create(args) {
+        const attachment: OccurrenceAttachment = {
+          id: randomUUID(),
+          occurrenceId: args.data.occurrenceId,
+          storageKey: args.data.storageKey,
+          fileName: args.data.fileName,
+          mimeType: args.data.mimeType,
+          size: args.data.size,
+          uploadedBy: args.data.uploadedBy,
+          createdAt: new Date(),
+        };
+        attachments.push(attachment);
+        return clone(attachment);
+      },
+
+      async delete(args) {
+        const index = attachments.findIndex((candidate) => candidate.id === args.where.id);
+        const current = attachments[index];
+        if (index === -1 || current === undefined) {
+          throw new Error(`Anexo não encontrado no mock: ${args.where.id}`);
+        }
+        attachments.splice(index, 1);
+        return clone(current);
+      },
+    },
+
+    occurrenceHistory: {
+      async findMany(args) {
+        const filtered = history.filter((entry) => entry.occurrenceId === args.where.occurrenceId);
+        const direction = args.orderBy?.createdAt ?? 'asc';
+        const sorted = [...filtered].sort((a, b) =>
+          direction === 'asc'
+            ? a.createdAt.getTime() - b.createdAt.getTime()
+            : b.createdAt.getTime() - a.createdAt.getTime(),
+        );
+        return clone(sorted);
+      },
+
+      async create(args) {
+        const entry: OccurrenceHistory = {
+          id: randomUUID(),
+          occurrenceId: args.data.occurrenceId,
+          actorUserId: args.data.actorUserId,
+          action: args.data.action,
+          previousValue: args.data.previousValue ?? null,
+          newValue: args.data.newValue ?? null,
+          createdAt: new Date(),
+        };
+        history.push(entry);
+        return clone(entry);
+      },
+    },
+
     async $queryRaw() {
       return [{ '?column?': 1 }];
     },
 
-    state: { users, projects, members, environments, domains, sessions, auditLogs },
+    state: {
+      users,
+      projects,
+      members,
+      environments,
+      domains,
+      sessions,
+      auditLogs,
+      occurrences,
+      comments,
+      attachments,
+      history,
+    },
 
     seedUser,
     seedProject,
     seedMember,
     seedEnvironment,
     seedDomainMapping,
+    seedOccurrence,
+    seedOccurrenceComment,
+    seedOccurrenceAttachment,
   };
 
   return mock;

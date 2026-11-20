@@ -2,14 +2,13 @@ import {
   BadRequestException,
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { GlobalRole, RegistrationStatus, type ProjectRole } from '@prisma/client';
+import type { ProjectRole } from '@prisma/client';
 
-import { PrismaService } from '../../prisma/prisma.service';
+import { ProjectAccessService } from '../access/project-access.service';
 import { PROJECT_ROLES_KEY } from '../decorators/require-project-role.decorator';
 import type { AuthenticatedUser, ResolvedMembership } from '../types/authenticated-user';
 
@@ -28,11 +27,12 @@ interface ProjectScopedRequest {
  *
  * Nunca confia no `projectId` do cliente como fonte de autorização: o valor
  * recebido é tratado como intenção e validado contra o vínculo persistido.
+ * A lógica de autorização é delegada à `ProjectAccessService` (fonte única).
  */
 @Injectable()
 export class ProjectAccessGuard implements CanActivate {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly accessService: ProjectAccessService,
     private readonly reflector: Reflector,
   ) {}
 
@@ -50,39 +50,16 @@ export class ProjectAccessGuard implements CanActivate {
       throw new BadRequestException('Parâmetro projectId obrigatório.');
     }
 
-    if (user.globalRole === GlobalRole.ADMINISTRADOR) {
-      request.projectMembership = null;
-      return true;
-    }
-
-    const membership = await this.prisma.projectMember.findUnique({
-      where: { projectId_userId: { projectId, userId: user.id } },
-    });
-
-    if (membership === null || membership.status !== RegistrationStatus.ATIVO) {
-      throw new ForbiddenException('Usuário não possui acesso ao projeto informado.');
-    }
-
-    request.projectMembership = {
-      id: membership.id,
-      projectId: membership.projectId,
-      userId: membership.userId,
-      role: membership.role,
-      status: membership.status,
-    };
-
     const requiredRoles = this.reflector.getAllAndOverride<ProjectRole[]>(PROJECT_ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
-    if (
-      requiredRoles !== undefined &&
-      requiredRoles.length > 0 &&
-      !requiredRoles.includes(membership.role)
-    ) {
-      throw new ForbiddenException('Permissão insuficiente neste projeto.');
-    }
+    request.projectMembership = await this.accessService.resolveMembership(
+      user,
+      projectId,
+      requiredRoles,
+    );
 
     return true;
   }

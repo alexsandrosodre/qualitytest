@@ -99,6 +99,7 @@ CREATE TABLE "project_domain_mappings" (
 CREATE TABLE "occurrences" (
     "id" TEXT NOT NULL,
     "publicCode" TEXT NOT NULL,
+    "idempotencyKey" TEXT,
     "projectId" TEXT NOT NULL,
     "environmentId" TEXT,
     "title" TEXT NOT NULL,
@@ -266,6 +267,9 @@ CREATE INDEX "project_domain_mappings_domainPattern_idx" ON "project_domain_mapp
 CREATE UNIQUE INDEX "occurrences_publicCode_key" ON "occurrences"("publicCode");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "occurrences_idempotencyKey_key" ON "occurrences"("idempotencyKey");
+
+-- CreateIndex
 CREATE INDEX "occurrences_projectId_status_idx" ON "occurrences"("projectId", "status");
 
 -- CreateIndex
@@ -393,4 +397,3 @@ ALTER TABLE "refresh_sessions" ADD CONSTRAINT "refresh_sessions_userId_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "ai_analyses" ADD CONSTRAINT "ai_analyses_occurrenceId_fkey" FOREIGN KEY ("occurrenceId") REFERENCES "occurrences"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-

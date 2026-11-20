@@ -4,11 +4,13 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AuthModule } from './auth/auth.module';
+import { AccessModule } from './common/access/access.module';
 import { GlobalRolesGuard } from './common/guards/global-roles.guard';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { parseDurationToSeconds, validateEnv } from './common/config/env';
 import { TokensModule } from './common/tokens/tokens.module';
 import { HealthModule } from './health/health.module';
+import { OccurrencesModule } from './occurrences/occurrences.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProjectDomainsModule } from './project-domains/project-domains.module';
 import { ProjectEnvironmentsModule } from './project-environments/project-environments.module';
@@ -36,6 +38,7 @@ import { UsersModule } from './users/users.module';
       }),
     }),
     PrismaModule,
+    AccessModule,
     TokensModule,
     HealthModule,
     AuthModule,
@@ -44,6 +47,7 @@ import { UsersModule } from './users/users.module';
     ProjectMembersModule,
     ProjectEnvironmentsModule,
     ProjectDomainsModule,
+    OccurrencesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

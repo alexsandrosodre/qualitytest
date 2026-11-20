@@ -212,6 +212,9 @@ model ProjectDomainMapping {
 model Occurrence {
   id                  String             @id @default(cuid())
   publicCode          String             @unique
+  /// Chave de idempotência informada pelo cliente na criação (seção 5.5).
+  /// Impede duplicidade em reenvios: mesma chave retorna a mesma ocorrência.
+  idempotencyKey      String?            @unique
   projectId           String
   environmentId       String?
   title               String

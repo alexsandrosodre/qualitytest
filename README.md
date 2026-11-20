@@ -3,10 +3,11 @@
 Plataforma corporativa para centralizar o registro e o acompanhamento de testes, defeitos,
 inconsistências e problemas identificados durante a homologação dos sistemas.
 
-> **Estado atual: Etapa 4 (PROJETOS) em andamento.**
-> A API já expõe login/logout/refresh, gestão de usuários, vínculos por projeto e o CRUD de
-> projetos/ambientes/domínios (RBAC + isolamento). Telas de produto, ocorrências e demais
-> funcionalidades vêm nas próximas etapas.
+> **Estado atual: Etapa 5 (OCORRÊNCIAS) em andamento.**
+> A API já expõe login/logout/refresh, gestão de usuários, vínculos por projeto, o CRUD de
+> projetos/ambientes/domínios e o núcleo de ocorrências (cadastro idempotente, listagem com
+> isolamento por projeto, detalhe, edição, responsável, fluxo de status, comentários, anexos e
+> auditoria). Telas de produto e demais funcionalidades vêm nas próximas etapas.
 > A especificação mestra está em `Quality_Test_Especificacao_Mestre_GitHub_Vercel_v4.txt` e a
 > documentação de arquitetura em `docs/architecture/`.
 
@@ -157,6 +158,16 @@ A autenticação é **própria** (não gerenciada). O transporte é via cabeçal
 | PATCH/DELETE | `/api/projects/:projectId/domains/:mappingId` | Edição / remoção do mapeamento de domínio |
 | POST/GET | `/api/projects/:projectId/members` | Vínculos do projeto (membro ativo ou `ADMINISTRADOR`) |
 | PATCH/DELETE | `/api/projects/:projectId/members/:userId` | Altera papel / desativa vínculo (`ADMINISTRADOR` ou `GESTOR`) |
+| POST/GET | `/api/occurrences` | Cria (exige header `Idempotency-Key`) / lista ocorrências do projeto autorizado |
+| GET/PATCH | `/api/occurrences/:occurrenceId` | Detalhe / edição de campos permitidos da ocorrência |
+| PATCH | `/api/occurrences/:occurrenceId/assignee` | Atribui/reatribui o responsável (`GESTOR`/`ADMINISTRADOR`) |
+| PATCH | `/api/occurrences/:occurrenceId/status` | Altera o status respeitando as transições permitidas |
+| GET | `/api/occurrences/:occurrenceId/history` | Histórico cronológico de alterações |
+| POST/GET | `/api/occurrences/:occurrenceId/comments` | Adiciona / lista comentários |
+| PATCH/DELETE | `/api/occurrences/:occurrenceId/comments/:commentId` | Edita / remove comentário (autor, `GESTOR` ou `ADMINISTRADOR`) |
+| POST/GET | `/api/occurrences/:occurrenceId/attachments` | Solicita upload (URL assinada) / lista anexos |
+| GET | `/api/occurrences/:occurrenceId/attachments/:attachmentId/url` | Gera URL assinada de download |
+| DELETE | `/api/occurrences/:occurrenceId/attachments/:attachmentId` | Remove anexo (autor, `GESTOR` ou `ADMINISTRADOR`) |
 
 ### Controle de acesso (RBAC + isolamento por projeto)
 
@@ -217,6 +228,5 @@ O pipeline não faz deploy e não utiliza secrets.
 
 ## Fora do escopo desta etapa
 
-CRUD de ocorrências, anexos, comentários, dashboard, extensão do Chrome, notificações
-WhatsApp e IA são entregues nas etapas seguintes (ver seção 19 da especificação e
-`docs/architecture/plano-incremental.md`).
+Dashboard, extensão do Chrome, notificações WhatsApp e IA são entregues nas etapas seguintes
+(ver seção 19 da especificação e `docs/architecture/plano-incremental.md`).
