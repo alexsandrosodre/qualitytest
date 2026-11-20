@@ -79,14 +79,33 @@ desenvolvimento e casam com o `docker/docker-compose.yml`.
 npm run docker:up
 ```
 
-Sobe `postgres` (5432), `redis` (6379) e `minio` (9000/9002).
+Sobe `postgres` (5432) e `redis` (6379).
+
+O storage S3 de desenvolvimento é **opcional** e escolhido por profile. As duas opções
+expõem o mesmo endpoint (`http://localhost:9000`), então o `.env` não muda:
+
+```powershell
+# Opção A - MinIO (requer baixar a imagem minio/minio)
+npm run docker:up:minio
+
+# Opção B - S3 mock (moto), para ambientes onde minio/minio está bloqueado
+npm run docker:up:s3mock
+```
+
+O bucket usado pelo `.env` (`S3_BUCKET=qualitytest-dev`) precisa existir uma única vez.
+Crie-o depois de subir o storage (exemplo com o mock em execução):
+
+```powershell
+Invoke-RestMethod -Method Put -Uri "http://localhost:9000/qualitytest-dev" -Body ""
+```
+
 Para aguardar os serviços ficarem prontos:
 
 ```powershell
 npm run docker:wait
 ```
 
-Para derrubar:
+Para derrubar (inclui o storage, se ativo):
 
 ```powershell
 npm run docker:down
@@ -192,7 +211,8 @@ A autenticação é **própria** (não gerenciada). O transporte é via cabeçal
 | `npm run typecheck` | `tsc --noEmit` em todos os workspaces |
 | `npm test` | Testes de todos os workspaces que possuem script `test` |
 | `npm run build` | Build de `shared` → `api` → `worker` → `web` |
-| `npm run docker:up` / `docker:down` | Serviços de desenvolvimento |
+| `npm run docker:up` / `docker:down` | Serviços de desenvolvimento (`postgres` + `redis`; `down` inclui storage) |
+| `npm run docker:up:minio` / `docker:up:s3mock` | Storage S3 de dev via profile (MinIO ou mock) |
 | `npm run docker:wait` | Aguarda Postgres/Redis aceitarem conexão |
 | `npm run db:migrate` / `db:seed` | Migrações e seed de desenvolvimento |
 

@@ -6,6 +6,13 @@
 #
 # Subir:  docker compose -f docker/docker-compose.yml up -d
 # Parar:  docker compose -f docker/docker-compose.yml down
+#
+# Storage S3 de desenvolvimento (escolha UM):
+#   MinIO  : docker compose -f docker/docker-compose.yml --profile minio  up -d
+#   S3 mock: docker compose -f docker/docker-compose.yml --profile s3mock up -d
+# Ambos expõem o mesmo endpoint (http://localhost:9000), então o `.env`
+# (S3_ENDPOINT/S3_BUCKET) não muda. Use o mock quando `minio/minio` não puder
+# ser baixado (ex.: registry/proxy bloqueando a imagem).
 # =============================================================================
 
 name: qualitytest
@@ -50,9 +57,11 @@ services:
       start_period: 5s
 
   # --- MinIO (storage S3 compatível) -----------------------------------------
+  # Opcional: ative com `--profile minio`. Requer baixar a imagem `minio/minio`.
   minio:
     image: minio/minio:latest
     container_name: qualitytest-minio
+    profiles: ["minio"]
     restart: unless-stopped
     command: ["server", "/data", "--console-address", ":9002"]
     environment:
@@ -64,6 +73,18 @@ services:
       - "9002:9002" # Console web
     volumes:
       - minio-data:/data
+
+  # --- S3 mock (moto) — alternativa quando `minio/minio` está bloqueado ------
+  # Opcional: ative com `--profile s3mock`. Expõe o mesmo endpoint do MinIO
+  # (0.0.0.0:9000), então o `.env` (S3_ENDPOINT=http://localhost:9000) não muda.
+  # Aceita quaisquer credenciais. Crie o bucket uma vez (ver README).
+  s3mock:
+    image: motoserver/moto:latest
+    container_name: qualitytest-s3mock
+    profiles: ["s3mock"]
+    restart: unless-stopped
+    ports:
+      - "9000:5000" # API S3 (moto escuta em 5000 no contêiner)
 
 volumes:
   postgres-data:
