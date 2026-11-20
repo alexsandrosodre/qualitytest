@@ -2,7 +2,7 @@
 
 **Versão:** 1.0
 **Data:** 21/11/2026
-**Status:** Em execução (Etapas 1, 2, 3, 4 e 5 concluídas; Etapa 6 em andamento)
+**Status:** Em execução (Etapas 1 a 6 concluídas; Etapa 7 planejada)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Detalhar as **12 etapas** do plano de execução (seção 19 da especificação mestra), com objetivo, entregáveis e critérios de aceite de cada etapa.
 
-> **Estado atual:** **Etapa 6 — FRONTEND E DASHBOARD — Em andamento**. As Etapas 1, 2, 3, 4 e 5 estão **Concluídas**; as demais estão **Planejadas**.
+> **Estado atual:** **Etapa 6 — FRONTEND E DASHBOARD — Concluída** (pendência: E2E de navegador). As Etapas 1 a 6 estão **Concluídas**; a próxima é a **Etapa 7 — Extensão Chrome**.
 
 ---
 
@@ -104,7 +104,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 6 — FRONTEND E DASHBOARD
 
-**Status:** Planejado
+**Status:** Concluída (pendência: E2E de navegador ponta a ponta)
 
 **Objetivo:** Construir a interface e os indicadores.
 
@@ -195,7 +195,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 | 3 | Autenticação e Autorização | Concluída |
 | 4 | Projetos | Concluída |
 | 5 | Ocorrências | Concluída |
-| 6 | Frontend e Dashboard | Planejado |
+| 6 | Frontend e Dashboard | Concluída (pendência: E2E de navegador) |
 | 7 | Extensão Chrome | Planejado |
 | 8 | Notificações | Planejado |
 | 9 | IA Opcional | Planejado |

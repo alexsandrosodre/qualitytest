@@ -2,7 +2,7 @@
 
 **Versão:** 1.0
 **Data:** 21/11/2026
-**Status:** Planejado (não implementado)
+**Status:** Implementado na Etapa 6 (13 rotas navegáveis; pendência: E2E de navegador)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Apresentar o sitemap, o diagrama de navegação, a lista das **19 telas mínimas** (seção 15 da especificação), a **matriz de telas por perfil** e wireframes descritivos simples.
 
-> Conteúdo **Planejado**. As telas ainda não existem. Os wireframes são descritivos (texto/Mermaid), sem valores reais.
+> As telas mínimas foram **implementadas na Etapa 6** em `apps/web` (App Router). As telas condicionais 13 (Equipes) e 14 (Categorias) seguem **pendentes de definição**. Os wireframes são descritivos (texto/Mermaid), sem valores reais.
 
 ---
 

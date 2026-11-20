@@ -11,3 +11,9 @@ process.env.THROTTLE_TTL = process.env.THROTTLE_TTL ?? '60';
 // Limite alto nos testes para não sofrer bloqueio de rate limit ao chamar
 // vários endpoints no mesmo cenário.
 process.env.THROTTLE_LIMIT = process.env.THROTTLE_LIMIT ?? '10000';
+// Força o adaptador de storage em memória nos testes, independentemente do
+// `.env` local do desenvolvedor (que pode apontar para um S3/MinIO real).
+// Como estas chaves já existem no ambiente, o `ConfigModule`/dotenv não as
+// sobrescreve e o `StorageModule` seleciona o adaptador in-memory.
+process.env.S3_ENDPOINT = '';
+process.env.S3_BUCKET = '';
