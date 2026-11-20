@@ -2,7 +2,7 @@
 
 **Versão:** 1.0
 **Data:** 21/11/2026
-**Status:** Em execução (Etapas 1 a 6 concluídas; Etapa 7 planejada)
+**Status:** Em execução (Etapas 1 a 7 concluídas; Etapa 8 planejada)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Detalhar as **12 etapas** do plano de execução (seção 19 da especificação mestra), com objetivo, entregáveis e critérios de aceite de cada etapa.
 
-> **Estado atual:** **Etapa 6 — FRONTEND E DASHBOARD — Concluída** (pendência: E2E de navegador). As Etapas 1 a 6 estão **Concluídas**; a próxima é a **Etapa 7 — Extensão Chrome**.
+> **Estado atual:** **Etapa 7 — EXTENSÃO CHROME — Concluída** (pendências: domínio oficial da extensão e armazenamento seguro do token — seção 11 de [extensao-chrome.md](extensao-chrome.md); e E2E de navegador da Etapa 6). As Etapas 1 a 7 estão **Concluídas**; a próxima é a **Etapa 8 — Notificações**.
 
 ---
 
@@ -116,7 +116,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 7 — EXTENSÃO CHROME
 
-**Status:** Planejado
+**Status:** Concluída (pendências: domínio oficial e armazenamento seguro do token)
 
 **Objetivo:** Permitir registro de ocorrência durante a navegação.
 
@@ -196,7 +196,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 | 4 | Projetos | Concluída |
 | 5 | Ocorrências | Concluída |
 | 6 | Frontend e Dashboard | Concluída (pendência: E2E de navegador) |
-| 7 | Extensão Chrome | Planejado |
+| 7 | Extensão Chrome | Concluída (pendências: domínio oficial e armazenamento do token) |
 | 8 | Notificações | Planejado |
 | 9 | IA Opcional | Planejado |
 | 10 | Segurança e Qualidade | Planejado |

@@ -15,11 +15,12 @@ import { ProjectAccessGuard } from '../common/guards/project-access.guard';
 import type { AuthenticatedUser } from '../common/types/authenticated-user';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { ListProjectsQueryDto } from './dto/list-projects-query.dto';
+import { SuggestProjectsQueryDto } from './dto/suggest-projects-query.dto';
 import { UpdateProjectStatusDto } from './dto/update-project-status.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { ProjectsService } from './projects.service';
 import type { ProjectView } from './project.mapper';
-import type { Paginated } from '@qualitytest/shared';
+import type { Paginated, ProjectSuggestionResult } from '@qualitytest/shared';
 
 @ApiTags('projects')
 @ApiBearerAuth()
@@ -45,6 +46,18 @@ export class ProjectsController {
     @Query() query: ListProjectsQueryDto,
   ): Promise<Paginated<ProjectView>> {
     return this.projectsService.findAll(actor, query);
+  }
+
+  @Get('suggest')
+  @ApiOperation({
+    summary: 'Sugere projetos por domínio/URL (sugestão sempre confirmável, seção 6.2).',
+  })
+  @ApiOkResponse({ description: 'Sugestões de projeto (possivelmente ambíguas).' })
+  suggest(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Query() query: SuggestProjectsQueryDto,
+  ): Promise<ProjectSuggestionResult> {
+    return this.projectsService.suggest(actor, query.url);
   }
 
   @Get(':projectId')

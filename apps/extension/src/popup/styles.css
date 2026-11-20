@@ -1,0 +1,181 @@
+:root {
+  color-scheme: light;
+  --cor-texto: #1f2933;
+  --cor-suave: #52606d;
+  --cor-borda: #cbd2d9;
+  --cor-primaria: #1a56db;
+  --cor-primaria-escura: #12409e;
+  --cor-erro: #b91c1c;
+  --cor-erro-fundo: #fde8e8;
+  --cor-sucesso: #046c4e;
+  --cor-sucesso-fundo: #e3f9ef;
+  --cor-aviso: #8a5300;
+  --cor-aviso-fundo: #fdf3d7;
+  --cor-fundo: #f5f7fa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 380px;
+  margin: 0;
+  padding: 12px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+  font-size: 13px;
+}
+
+h1 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+h2 {
+  font-size: 13px;
+  margin: 12px 0 6px;
+}
+
+.muted {
+  color: var(--cor-suave);
+}
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.usuario {
+  font-size: 12px;
+  color: var(--cor-suave);
+  word-break: break-word;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--cor-suave);
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--cor-texto);
+  background: #ffffff;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 64px;
+}
+
+button {
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primario {
+  background: var(--cor-primaria);
+  color: #ffffff;
+}
+
+.btn-primario:hover:not(:disabled) {
+  background: var(--cor-primaria-escura);
+}
+
+.btn-secundario {
+  background: #ffffff;
+  color: var(--cor-primaria);
+  border-color: var(--cor-borda);
+}
+
+.linha {
+  display: flex;
+  gap: 8px;
+}
+
+.linha > * {
+  flex: 1;
+}
+
+.mensagem {
+  padding: 8px 10px;
+  border-radius: 6px;
+  line-height: 1.35;
+  white-space: pre-line;
+}
+
+.erro {
+  background: var(--cor-erro-fundo);
+  color: var(--cor-erro);
+}
+
+.sucesso {
+  background: var(--cor-sucesso-fundo);
+  color: var(--cor-sucesso);
+}
+
+.aviso {
+  background: var(--cor-aviso-fundo);
+  color: var(--cor-aviso);
+}
+
+.privacy {
+  background: var(--cor-aviso-fundo);
+  color: var(--cor-aviso);
+  padding: 8px 10px;
+  border-radius: 6px;
+  line-height: 1.35;
+}
+
+.preview {
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.rodape {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--cor-borda);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { GlobalRole, RegistrationStatus, type Prisma } from '@prisma/client';
-import type { Paginated } from '@qualitytest/shared';
+import type { Paginated, ProjectSuggestionResult } from '@qualitytest/shared';
 
 import { AuditService } from '../common/audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -13,6 +13,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { ListProjectsQueryDto } from './dto/list-projects-query.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { toProjectView, type ProjectView } from './project.mapper';
+import { buildProjectSuggestion } from './project-suggestion';
 
 @Injectable()
 export class ProjectsService {
@@ -97,6 +98,42 @@ export class ProjectsService {
       total,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
     };
+  }
+
+  /**
+   * Sugere projetos a partir da URL da página em teste (seção 6.2).
+   *
+   * Considera apenas projetos ATIVOS que o usuário pode acessar (ADMINISTRADOR:
+   * todos; demais: vínculos ativos) e cujos mapeamentos de domínio estejam
+   * habilitados. A sugestão é **sempre confirmável** — nunca aplicada
+   * silenciosamente. Ambiguidade (mais de um projeto) é sinalizada.
+   */
+  async suggest(actor: AuthenticatedUser, rawUrl: string): Promise<ProjectSuggestionResult> {
+    const where: Prisma.ProjectWhereInput = { status: RegistrationStatus.ATIVO };
+
+    if (actor.globalRole !== GlobalRole.ADMINISTRADOR) {
+      where.members = { some: { userId: actor.id, status: RegistrationStatus.ATIVO } };
+    }
+
+    const projects = await this.prisma.project.findMany({ where });
+    if (projects.length === 0) {
+      return { suggestions: [], ambiguous: false };
+    }
+
+    const nameById = new Map(projects.map((project) => [project.id, project.name]));
+
+    const mappings = await this.prisma.projectDomainMapping.findMany({
+      where: { projectId: { in: projects.map((project) => project.id) }, enabled: true },
+    });
+
+    return buildProjectSuggestion(
+      mappings.map((mapping) => ({
+        projectId: mapping.projectId,
+        projectName: nameById.get(mapping.projectId) ?? '',
+        domainPattern: mapping.domainPattern,
+      })),
+      rawUrl,
+    );
   }
 
   /** Detalhe do projeto. O vínculo é validado pela `ProjectAccessGuard`. */

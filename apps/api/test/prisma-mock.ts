@@ -224,7 +224,7 @@ export interface PrismaMock {
   projectDomainMapping: {
     findUnique(args: { where: { id: string } }): Promise<ProjectDomainMapping | null>;
     findMany(args: {
-      where?: { projectId?: string };
+      where?: { projectId?: string | { in: string[] }; enabled?: boolean };
       orderBy?: { domainPattern?: 'asc' | 'desc' };
     }): Promise<ProjectDomainMapping[]>;
     create(args: {
@@ -818,9 +818,22 @@ export function createPrismaMock(): PrismaMock {
       },
 
       async findMany(args) {
-        const filtered = domains.filter(
-          (mapping) => args.where?.projectId === undefined || mapping.projectId === args.where.projectId,
-        );
+        const where = args.where;
+        const filtered = domains.filter((mapping) => {
+          if (where?.projectId !== undefined) {
+            if (typeof where.projectId === 'string') {
+              if (mapping.projectId !== where.projectId) {
+                return false;
+              }
+            } else if (!where.projectId.in.includes(mapping.projectId)) {
+              return false;
+            }
+          }
+          if (where?.enabled !== undefined && mapping.enabled !== where.enabled) {
+            return false;
+          }
+          return true;
+        });
         const sorted = [...filtered].sort((a, b) => {
           const direction = args.orderBy?.domainPattern ?? 'asc';
           return direction === 'desc'

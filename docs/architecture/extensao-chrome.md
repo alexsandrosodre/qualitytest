@@ -2,7 +2,7 @@
 
 **Versão:** 1.0
 **Data:** 21/11/2026
-**Status:** Planejado (não implementado)
+**Status:** Implementado (Etapa 7). Pendências abertas na seção 11.
 
 ---
 
@@ -10,7 +10,7 @@
 
 Definir a estratégia da extensão do Google Chrome do QUALITY TEST, que permite ao testador registrar uma ocorrência enquanto navega no sistema testado, sem alternar para o painel principal. Fiel à **seção 6** da especificação mestra.
 
-> Conteúdo **Planejado**. Representa a arquitetura alvo. Nada foi implementado.
+> Conteúdo **Implementado** na Etapa 7 (código em `apps/extension`). As pendências de definição externa permanecem listadas na seção 11.
 
 ---
 

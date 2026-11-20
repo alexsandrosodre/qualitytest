@@ -17,7 +17,7 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "build": "npm run build --workspace @qualitytest/shared && npm run build --workspace @qualitytest/api && npm run build --workspace @qualitytest/worker && npm run build --workspace @qualitytest/web",
+    "build": "npm run build --workspace @qualitytest/shared && npm run build --workspace @qualitytest/api && npm run build --workspace @qualitytest/worker && npm run build --workspace @qualitytest/web && npm run build --workspace @qualitytest/extension",
     "dev:api": "npm run start:dev --workspace @qualitytest/api",
     "dev:web": "npm run dev --workspace @qualitytest/web",
     "dev:worker": "npm run dev --workspace @qualitytest/worker",

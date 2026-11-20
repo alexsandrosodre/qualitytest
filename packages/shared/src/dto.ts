@@ -109,6 +109,26 @@ export interface OccurrenceSummary {
   updatedAt: string;
 }
 
+/**
+ * Confiança da sugestão de projeto por domínio/URL (seção 6.2).
+ * `alta` = correspondência única; `media` = mais de um candidato (ambíguo).
+ */
+export type ProjectSuggestionConfidence = 'alta' | 'media';
+
+/** Sugestão de projeto a partir de uma URL — sempre confirmável pelo usuário. */
+export interface ProjectSuggestion {
+  projectId: string;
+  name: string;
+  confidence: ProjectSuggestionConfidence;
+}
+
+/** Resposta de `GET /projects/suggest?url=<url>` (seção 6.2 da especificação). */
+export interface ProjectSuggestionResult {
+  suggestions: ProjectSuggestion[];
+  /** `true` quando mais de um projeto corresponde: exige seleção manual. */
+  ambiguous: boolean;
+}
+
 export interface NotificationDestinationDTO {
   id: string;
   projectId: string;
