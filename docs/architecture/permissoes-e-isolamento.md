@@ -61,6 +61,8 @@ Legenda: **S** = Sim (permitido) · **N** = Não (negado) · **C** = Condicional
 | Acessar dashboard do projeto | S | S | C | C |
 | Acessar auditoria | S | C | N | N |
 | Gerenciar IA (ativar/desativar) | S | N | N | N |
+| Gerar/consultar sugestões de IA (projeto autorizado) | S | S | S | S |
+| Aplicar sugestão de IA (categoria/prioridade) | S | S | C | C |
 
 > A matriz acima é uma **proposta inicial** derivada dos papéis descritos na seção 3.2. As células marcadas **C** exigem definição precisa de quem concede a permissão — **PENDENTE DE DEFINIÇÃO** durante a implementação da ETAPA 3.
 
@@ -81,6 +83,7 @@ O isolamento lógico deve ser aplicado de forma consistente em **todas as camada
    - Relatórios e indicadores;
    - Comentários e anexos;
    - Notificações (destinos e regras);
+   - Análises de IA (listagem e geração) e candidatas de duplicidade (somente do mesmo projeto);
    - Extensão (sugestão, seleção e envio).
 4. **Escopo de dados por usuário.** Para perfis não-ADMINISTRADOR, toda consulta é restrita ao conjunto de projetos em que há vínculo ativo. O ADMINISTRADOR pode consultar todos.
 5. **Anexos e storage.** O download só é liberado após validar o vínculo do usuário com o projeto da ocorrência; usar URLs assinadas com expiração.

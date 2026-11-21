@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useMemo, useRef, useState } from 'react';
 
-import { GlobalRole, ProjectRole } from '@qualitytest/shared';
+import { AiSuggestionType, GlobalRole, OccurrenceCategory, OccurrencePriority, ProjectRole } from '@qualitytest/shared';
 
 import {
   Button,
@@ -24,6 +24,8 @@ import {
 import { apiDelete, apiGet, apiPatch, apiPost, describeApiError } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth';
 import {
+  OCCURRENCE_CATEGORY_LABELS,
+  OCCURRENCE_PRIORITY_LABELS,
   OCCURRENCE_STATUS_LABELS,
   formatBytes,
   formatDateTime,
@@ -31,6 +33,8 @@ import {
 } from '@/lib/format';
 import { OCCURRENCE_PERMISSIONS, allowedTransitions, isRoleAllowed } from '@/lib/occurrence-rules';
 import type {
+  AiAnalysesResult,
+  AiSuggestionView,
   AttachmentDownloadView,
   AttachmentUploadView,
   OccurrenceCommentView,
@@ -38,6 +42,14 @@ import type {
   OccurrenceHistoryView,
   ProjectMemberListItem,
 } from '@/lib/types';
+
+/** Rótulo exibido para cada tipo de sugestão de IA. */
+const AI_SUGGESTION_LABELS: Record<AiSuggestionType, string> = {
+  [AiSuggestionType.RESUMO]: 'Resumo sugerido',
+  [AiSuggestionType.CATEGORIA]: 'Categoria sugerida',
+  [AiSuggestionType.PRIORIDADE]: 'Prioridade sugerida',
+  [AiSuggestionType.DUPLICIDADE]: 'Possível duplicidade',
+};
 
 export default function OccurrenceDetailPage() {
   const params = useParams<{ occurrenceId: string }>();
@@ -70,6 +82,11 @@ export default function OccurrenceDetailPage() {
     queryKey: ['project-members', projectId],
     enabled: projectId !== null,
     queryFn: () => apiGet<ProjectMemberListItem[]>(`/projects/${projectId}/members`),
+  });
+
+  const aiQuery = useQuery({
+    queryKey: ['occurrence-ai', occurrenceId],
+    queryFn: () => apiGet<AiAnalysesResult>(`/occurrences/${occurrenceId}/ai-analyses`),
   });
 
   const isAdmin = user?.globalRole === GlobalRole.ADMINISTRADOR;
@@ -118,6 +135,8 @@ export default function OccurrenceDetailPage() {
   const canAssign = isRoleAllowed(actorRole, OCCURRENCE_PERMISSIONS.assign);
   const canComment = isRoleAllowed(actorRole, OCCURRENCE_PERMISSIONS.comment);
   const canAttach = isRoleAllowed(actorRole, OCCURRENCE_PERMISSIONS.attach);
+  const canEditCategory = isRoleAllowed(actorRole, OCCURRENCE_PERMISSIONS.edit);
+  const canEditPriority = isRoleAllowed(actorRole, OCCURRENCE_PERMISSIONS.editPriority);
 
   const activeMembers = (membersQuery.data ?? []).filter((member) => member.status === 'ATIVO');
 
@@ -205,6 +224,51 @@ export default function OccurrenceDetailPage() {
     } catch (error) {
       toast.error(describeApiError(error));
     }
+  };
+
+  const aiResult = aiQuery.data;
+  const latestAiAnalysis = aiResult?.items[0] ?? null;
+
+  /** Gera novas sugestões (não altera a ocorrência; apenas registra a análise). */
+  const handleGenerateAi = async (): Promise<void> => {
+    setBusy(true);
+    try {
+      await apiPost(`/occurrences/${occurrenceId}/ai-analyses`);
+      toast.success('Sugestões de IA geradas.');
+      await aiQuery.refetch();
+    } catch (error) {
+      toast.error(describeApiError(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Texto legível de uma sugestão (traduz valores de enum quando aplicável). */
+  const suggestionLabel = (suggestion: AiSuggestionView): string => {
+    if (suggestion.type === AiSuggestionType.CATEGORIA) {
+      return OCCURRENCE_CATEGORY_LABELS[suggestion.value as OccurrenceCategory];
+    }
+    if (suggestion.type === AiSuggestionType.PRIORIDADE) {
+      return OCCURRENCE_PRIORITY_LABELS[suggestion.value as OccurrencePriority];
+    }
+    return suggestion.value;
+  };
+
+  /** Aplica a categoria sugerida — sempre mediante confirmação humana. */
+  const applySuggestedCategory = (category: OccurrenceCategory): void => {
+    setConfirm({
+      message: `Aplicar a categoria sugerida "${OCCURRENCE_CATEGORY_LABELS[category]}"? A sugestão é assistiva e a alteração será registrada no histórico.`,
+      action: () =>
+        apiPatch(`/occurrences/${occurrenceId}`, { categoryId: category }).then(() => undefined),
+    });
+  };
+
+  /** Aplica a prioridade sugerida — sempre mediante confirmação humana. */
+  const applySuggestedPriority = (priority: OccurrencePriority): void => {
+    setConfirm({
+      message: `Aplicar a prioridade sugerida "${OCCURRENCE_PRIORITY_LABELS[priority]}"? A sugestão é assistiva e a alteração será registrada no histórico.`,
+      action: () => apiPatch(`/occurrences/${occurrenceId}`, { priority }).then(() => undefined),
+    });
   };
 
   return (
@@ -537,6 +601,100 @@ export default function OccurrenceDetailPage() {
                 </Button>
               </div>
             </div>
+          </Card>
+
+          <Card
+            title="Sugestões de IA"
+            description="Assistivas — nada é alterado sem a sua confirmação."
+            bodyClassName="space-y-4"
+          >
+            <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Conteúdo gerado por IA ({aiResult?.provider ?? '—'} · {aiResult?.model ?? '—'}). Revise
+              com atenção antes de aplicar.
+            </p>
+
+            {aiQuery.isLoading ? (
+              <p className="text-sm text-slate-500">Carregando sugestões...</p>
+            ) : aiQuery.isError ? (
+              <p className="text-sm text-slate-500">{describeApiError(aiQuery.error)}</p>
+            ) : aiResult === undefined || !aiResult.enabled ? (
+              <p className="text-sm text-slate-500">
+                O módulo de IA está desativado neste ambiente.
+              </p>
+            ) : (
+              <>
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => {
+                      void handleGenerateAi();
+                    }}
+                  >
+                    Gerar sugestões
+                  </Button>
+                </div>
+
+                {latestAiAnalysis === null || latestAiAnalysis.suggestions.length === 0 ? (
+                  <EmptyState
+                    title="Nenhuma sugestão"
+                    description="Gere sugestões para esta ocorrência."
+                  />
+                ) : (
+                  <ul className="space-y-3">
+                    {latestAiAnalysis.suggestions.map((suggestion, index) => (
+                      <li
+                        key={`${suggestion.type}-${index}`}
+                        className="rounded-lg border border-slate-100 bg-slate-50 p-3"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            {AI_SUGGESTION_LABELS[suggestion.type]}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            confiança {Math.round(suggestion.confidence * 100)}%
+                          </span>
+                        </div>
+                        <p className="mt-1 text-sm text-slate-800">{suggestionLabel(suggestion)}</p>
+                        {suggestion.rationale !== null ? (
+                          <p className="mt-1 text-xs text-slate-500">{suggestion.rationale}</p>
+                        ) : null}
+
+                        {suggestion.type === AiSuggestionType.CATEGORIA && canEditCategory ? (
+                          <div className="mt-2 flex justify-end">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={busy}
+                              onClick={() => {
+                                applySuggestedCategory(suggestion.value as OccurrenceCategory);
+                              }}
+                            >
+                              Aplicar categoria
+                            </Button>
+                          </div>
+                        ) : null}
+
+                        {suggestion.type === AiSuggestionType.PRIORIDADE && canEditPriority ? (
+                          <div className="mt-2 flex justify-end">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={busy}
+                              onClick={() => {
+                                applySuggestedPriority(suggestion.value as OccurrencePriority);
+                              }}
+                            >
+                              Aplicar prioridade
+                            </Button>
+                          </div>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
           </Card>
 
           <Card title="Histórico">

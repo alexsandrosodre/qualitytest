@@ -16,6 +16,7 @@ import {
   OccurrencePriority,
   OccurrenceStatus,
   RegistrationStatus,
+  type AIAnalysis,
   type AuditLog,
   type NotificationDelivery,
   type NotificationDestination,
@@ -151,6 +152,19 @@ interface OccurrenceOrderBy {
 interface NotificationDeliveryWhere {
   destinationId?: { in: string[] };
   status?: NotificationDeliveryStatus;
+}
+
+/** Filtro simplificado de `AIAnalysis` usado pelo serviço da Etapa 9. */
+interface AiAnalysisWhere {
+  occurrenceId?: string;
+}
+
+export interface SeedAiAnalysisInput {
+  occurrenceId: string;
+  provider?: string;
+  model?: string;
+  suggestions?: unknown[];
+  createdAt?: Date;
 }
 
 /** Filtro simplificado de `Project` usado pelos serviços da Etapa 4. */
@@ -449,6 +463,21 @@ export interface PrismaMock {
     }): Promise<NotificationDelivery[]>;
     count(args?: { where?: NotificationDeliveryWhere }): Promise<number>;
   };
+  aIAnalysis: {
+    findMany(args?: {
+      where?: AiAnalysisWhere;
+      orderBy?: { createdAt?: 'asc' | 'desc' };
+      take?: number;
+    }): Promise<AIAnalysis[]>;
+    create(args: {
+      data: {
+        occurrenceId: string;
+        provider: string;
+        model: string;
+        suggestions: Prisma.InputJsonValue;
+      };
+    }): Promise<AIAnalysis>;
+  };
   $queryRaw: () => Promise<unknown[]>;
   /** Dados brutos para asserções em testes. */
   state: {
@@ -466,6 +495,7 @@ export interface PrismaMock {
     notificationDestinations: NotificationDestination[];
     notificationRules: NotificationRule[];
     notificationDeliveries: NotificationDelivery[];
+    aiAnalyses: AIAnalysis[];
   };
   seedUser(input: SeedUserInput): User;
   seedProject(input: SeedProjectInput): Project;
@@ -478,6 +508,7 @@ export interface PrismaMock {
   seedNotificationDestination(input: SeedNotificationDestinationInput): NotificationDestination;
   seedNotificationRule(input: SeedNotificationRuleInput): NotificationRule;
   seedNotificationDelivery(input: SeedNotificationDeliveryInput): NotificationDelivery;
+  seedAiAnalysis(input: SeedAiAnalysisInput): AIAnalysis;
 }
 
 function clone<T>(value: T): T {
@@ -645,6 +676,7 @@ export function createPrismaMock(): PrismaMock {
   const notificationDestinations: NotificationDestination[] = [];
   const notificationRules: NotificationRule[] = [];
   const notificationDeliveries: NotificationDelivery[] = [];
+  const aiAnalyses: AIAnalysis[] = [];
 
   function seedUser(input: SeedUserInput): User {
     const now = new Date();
@@ -816,6 +848,19 @@ export function createPrismaMock(): PrismaMock {
     };
     notificationDeliveries.push(delivery);
     return delivery;
+  }
+
+  function seedAiAnalysis(input: SeedAiAnalysisInput): AIAnalysis {
+    const analysis: AIAnalysis = {
+      id: randomUUID(),
+      occurrenceId: input.occurrenceId,
+      provider: input.provider ?? 'local-deterministic',
+      model: input.model ?? 'heuristic-v1',
+      suggestions: (input.suggestions ?? []) as Prisma.JsonValue,
+      createdAt: input.createdAt ?? new Date(),
+    };
+    aiAnalyses.push(analysis);
+    return analysis;
   }
 
   const mock: PrismaMock = {
@@ -1467,6 +1512,37 @@ export function createPrismaMock(): PrismaMock {
       },
     },
 
+    aIAnalysis: {
+      async findMany(args) {
+        const filtered = aiAnalyses.filter(
+          (analysis) =>
+            args?.where?.occurrenceId === undefined ||
+            analysis.occurrenceId === args.where?.occurrenceId,
+        );
+        const direction = args?.orderBy?.createdAt ?? 'desc';
+        const sorted = [...filtered].sort((a, b) =>
+          direction === 'asc'
+            ? a.createdAt.getTime() - b.createdAt.getTime()
+            : b.createdAt.getTime() - a.createdAt.getTime(),
+        );
+        const take = args?.take ?? sorted.length;
+        return clone(sorted.slice(0, take));
+      },
+
+      async create(args) {
+        const analysis: AIAnalysis = {
+          id: randomUUID(),
+          occurrenceId: args.data.occurrenceId,
+          provider: args.data.provider,
+          model: args.data.model,
+          suggestions: args.data.suggestions as Prisma.JsonValue,
+          createdAt: new Date(),
+        };
+        aiAnalyses.push(analysis);
+        return clone(analysis);
+      },
+    },
+
     async $queryRaw() {
       return [{ '?column?': 1 }];
     },
@@ -1486,6 +1562,7 @@ export function createPrismaMock(): PrismaMock {
       notificationDestinations,
       notificationRules,
       notificationDeliveries,
+      aiAnalyses,
     },
 
     seedUser,
@@ -1499,6 +1576,7 @@ export function createPrismaMock(): PrismaMock {
     seedNotificationDestination,
     seedNotificationRule,
     seedNotificationDelivery,
+    seedAiAnalysis,
   };
 
   return mock;

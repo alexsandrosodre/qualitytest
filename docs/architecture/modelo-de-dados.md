@@ -417,18 +417,18 @@ Sessão de atualização de token.
 
 ### 3.15 AIAnalysis (opcional)
 
-Registro de sugestões de IA. Módulo opcional e desativável.
+Registro de sugestões de IA. Módulo opcional e desativável (`AI_ENABLED`, Etapa 9). Implementado no schema como `model AIAnalysis` (`@@map("ai_analyses")`, índice em `occurrenceId`, `onDelete: Restrict`).
 
 | Campo | Tipo | Regra |
 |---|---|---|
-| id | string | PK |
-| occurrenceId | string | FK → Occurrence |
-| provider | string | Provedor utilizado |
-| model | string | Modelo utilizado |
-| suggestions | json | Sugestões geradas |
-| createdAt | datetime | Data/hora |
+| id | string | PK (`cuid`) |
+| occurrenceId | string | FK → Occurrence (Restrict) · indexado |
+| provider | string | Provedor utilizado (ex.: `local-deterministic`; `disabled` quando desativado) |
+| model | string | Modelo utilizado (ex.: `heuristic-v1`; `none` quando desativado) |
+| suggestions | json | Lista de sugestões (`type`, `value`, `confidence`, `rationale`) — validada defensivamente na leitura |
+| createdAt | datetime | Data/hora (`now()`) |
 
-> Não armazenar segredos nem screenshots/dados sensíveis sem configuração, base legal e controles.
+> Não armazenar segredos nem screenshots/dados sensíveis sem configuração, base legal e controles. O provedor recebe apenas título/descrição/classificação da ocorrência (nunca anexos). Detalhes em [ia-opcional.md](ia-opcional.md).
 
 ---
 

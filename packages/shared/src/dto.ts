@@ -1,4 +1,5 @@
 import type {
+  AiSuggestionType,
   EnvironmentType,
   GlobalRole,
   NotificationChannel,
@@ -175,4 +176,50 @@ export interface NotificationJobPayload {
    * Usado como base da chave de idempotência do worker.
    */
   idempotencyKey?: string;
+}
+
+/* -------------------------------------------------------------------------- */
+/* IA opcional (Etapa 9)                                                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Sugestão individual produzida pela IA (seção 8). É sempre ASSISTIVA: o valor
+ * sugerido só é aplicado após confirmação humana explícita.
+ */
+export interface AiSuggestionDTO {
+  type: AiSuggestionType;
+  /**
+   * Valor sugerido. Conteúdo depende do `type`:
+   * - `RESUMO`: texto do resumo;
+   * - `CATEGORIA`/`PRIORIDADE`: valor do enum correspondente (`OccurrenceCategory`
+   *   / `OccurrencePriority`);
+   * - `DUPLICIDADE`: `publicCode` da ocorrência possivelmente duplicada.
+   */
+  value: string;
+  /** Confiança estimada (0 a 1). Heurística/estatística: sempre subjetiva. */
+  confidence: number;
+  /** Justificativa legível (por que a IA sugeriu). */
+  rationale: string | null;
+}
+
+/** Análise persistida em `AIAnalysis`. Nunca contém segredos. */
+export interface AiAnalysisDTO {
+  id: string;
+  occurrenceId: string;
+  provider: string;
+  model: string;
+  suggestions: AiSuggestionDTO[];
+  createdAt: string;
+}
+
+/** Resposta de `GET /occurrences/:occurrenceId/ai-analyses`. */
+export interface AiAnalysesResult {
+  /** `false` quando o módulo de IA está desativado (nenhuma sugestão é gerada). */
+  enabled: boolean;
+  /** Provedor em uso (ex.: `local-deterministic`, `disabled`). */
+  provider: string;
+  /** Modelo/versão do provedor. */
+  model: string;
+  /** Análises registradas, das mais recentes para as mais antigas. */
+  items: AiAnalysisDTO[];
 }

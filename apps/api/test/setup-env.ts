@@ -21,3 +21,6 @@ process.env.S3_BUCKET = '';
 // BullMQ ficaria tentando reconectar e manteria handles abertos. Os testes de
 // notificação injetam um publicador falso explicitamente.
 process.env.NOTIFICATIONS_ENABLED = process.env.NOTIFICATIONS_ENABLED ?? 'false';
+// Desabilita o módulo de IA por padrão nos testes (nenhuma sugestão é gerada).
+// Os testes de IA injetam um provedor explicitamente via override do token.
+process.env.AI_ENABLED = process.env.AI_ENABLED ?? 'false';

@@ -85,6 +85,20 @@ export enum NotificationDeliveryStatus {
   DESCARTADO = 'DESCARTADO',
 }
 
+/**
+ * Tipos de sugestão produzida pelo módulo OPCIONAL de IA (seção 8).
+ *
+ * A IA é sempre ASSISTIVA: nenhuma sugestão é aplicada automaticamente — toda
+ * mudança exige confirmação humana. Não há enum equivalente no schema porque
+ * `AIAnalysis.suggestions` é um JSON livre (validado na leitura).
+ */
+export enum AiSuggestionType {
+  RESUMO = 'RESUMO',
+  CATEGORIA = 'CATEGORIA',
+  PRIORIDADE = 'PRIORIDADE',
+  DUPLICIDADE = 'DUPLICIDADE',
+}
+
 /** Ações registradas no histórico da ocorrência. */
 export enum OccurrenceHistoryAction {
   CREATED = 'CREATED',
@@ -103,3 +117,4 @@ export const OCCURRENCE_PRIORITIES: readonly OccurrencePriority[] = Object.value
 export const OCCURRENCE_STATUSES: readonly OccurrenceStatus[] = Object.values(OccurrenceStatus);
 export const OCCURRENCE_CATEGORIES: readonly OccurrenceCategory[] = Object.values(OccurrenceCategory);
 export const ENVIRONMENT_TYPES: readonly EnvironmentType[] = Object.values(EnvironmentType);
+export const AI_SUGGESTION_TYPES: readonly AiSuggestionType[] = Object.values(AiSuggestionType);

@@ -479,9 +479,43 @@ Request:
 
 ---
 
-## 15. /ai/suggest
+## 15. /ai (IA opcional)
 
-Módulo **opcional**, desacoplado e configurável (seção 8). IA é assistiva e nunca fecha/altera status automaticamente.
+Módulo **opcional**, desacoplado e configurável (seção 8). IA é assistiva e **nunca** altera a ocorrência automaticamente: aplicar uma sugestão é uma ação humana via `PATCH /occurrences/:occurrenceId`. Desativado por padrão (`AI_ENABLED=false`) — quando desativado, a geração responde **`503`** e a listagem retorna `enabled: false`. Ver [ia-opcional.md](ia-opcional.md).
+
+**Implementado (Etapa 9):**
+
+| Método | Caminho | Descrição | Permissão exigida |
+|---|---|---|---|
+| GET | `/occurrences/:occurrenceId/ai-analyses` | Lista as análises registradas da ocorrência | Membro ativo do projeto (ou ADMINISTRADOR) |
+| POST | `/occurrences/:occurrenceId/ai-analyses` | Gera novas sugestões e registra a análise (auditoria) | Membro ativo do projeto (ou ADMINISTRADOR) |
+
+Aplicar as sugestões usa os endpoints já existentes: `PATCH /occurrences/:occurrenceId` com `{ "categoryId": ... }` (permissão de edição) ou `{ "priority": ... }` (permissão de alterar prioridade).
+
+**Exemplo — POST /occurrences/occ_0001/ai-analyses (201)**
+
+```json
+{
+  "id": "aia_0001",
+  "occurrenceId": "occ_0001",
+  "provider": "local-deterministic",
+  "model": "heuristic-v1",
+  "suggestions": [
+    { "type": "RESUMO", "value": "Ao salvar o cadastro, a API retorna erro 500.", "confidence": 0.5, "rationale": "Resumo derivado da descrição (heurística local determinística)." },
+    { "type": "CATEGORIA", "value": "ERRO_INTEGRACAO", "confidence": 0.7, "rationale": "Palavras-chave identificadas: api." },
+    { "type": "DUPLICIDADE", "value": "QT-000125", "confidence": 0.6, "rationale": "Título semelhante ao da ocorrência QT-000125." }
+  ],
+  "createdAt": "2026-11-21T12:00:00.000Z"
+}
+```
+
+**Exemplo — GET /occurrences/occ_0001/ai-analyses (200) com módulo desativado**
+
+```json
+{ "enabled": false, "provider": "disabled", "model": "none", "items": [] }
+```
+
+**Planejado (não implementado — adaptador externo futuro):**
 
 | Método | Caminho | Descrição | Permissão exigida |
 |---|---|---|---|
@@ -491,25 +525,7 @@ Módulo **opcional**, desacoplado e configurável (seção 8). IA é assistiva e
 | POST | `/ai/suggest/summary` | Resume descrição extensa | Autenticado |
 | GET | `/ai/similar?occurrenceId=...` | Encontra ocorrências potencialmente duplicadas | Membro do projeto |
 
-**Exemplo — POST /ai/suggest/category**
-
-Request:
-```json
-{ "projectId": "prj_0001", "description": "O botão de salvar fica fora da tela em resolução reduzida." }
-```
-
-Response 200:
-```json
-{
-  "isAiGenerated": true,
-  "suggestions": [
-    { "categoryId": "cat_visual", "confidence": 0.72 }
-  ],
-  "requiresHumanConfirmation": true
-}
-```
-
-> Não enviar screenshots ou dados sensíveis a provedores externos sem configuração, base legal e controles adequados. Registrar provedor/modelo, sem segredos.
+> Não enviar screenshots ou dados sensíveis a provedores externos sem configuração, base legal e controles adequados. Registrar provedor/modelo, sem segredos. O provedor local determinístico não acessa a rede.
 
 ---
 
@@ -535,6 +551,7 @@ Response 200:
 | 422 | Regra de negócio violada (ex.: transição de status inválida) |
 | 429 | Rate limit excedido |
 | 500 | Erro interno (sem vazar detalhes sensíveis) |
+| 503 | Módulo opcional desativado (ex.: IA com `AI_ENABLED=false`) |
 
 ---
 
@@ -543,4 +560,5 @@ Response 200:
 - Especificação mestra, seções 3, 4, 5, 6, 7, 8, 9, 10, 11, 12.
 - [permissoes-e-isolamento.md](permissoes-e-isolamento.md)
 - [modelo-de-dados.md](modelo-de-dados.md)
+- [ia-opcional.md](ia-opcional.md)
 - [notificacoes-whatsapp.md](notificacoes-whatsapp.md)

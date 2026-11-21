@@ -1,8 +1,8 @@
 # Plano Incremental de Execução
 
-**Versão:** 1.0
+**Versão:** 1.1
 **Data:** 21/11/2026
-**Status:** Em execução (Etapas 1 a 8 concluídas; próxima: Etapa 9 — IA opcional)
+**Status:** Em execução (Etapas 1 a 9 concluídas; próxima: Etapa 10 — Segurança e Qualidade)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Detalhar as **12 etapas** do plano de execução (seção 19 da especificação mestra), com objetivo, entregáveis e critérios de aceite de cada etapa.
 
-> **Estado atual:** **Etapa 8 — NOTIFICAÇÕES — Concluída** (pendência: credenciais oficiais da WhatsApp Cloud API — canal permanece desativado; seção 11 de [notificacoes-whatsapp.md](notificacoes-whatsapp.md)). Pendências herdadas: domínio oficial da extensão e armazenamento seguro do token (seção 11 de [extensao-chrome.md](extensao-chrome.md)) e E2E de navegador da Etapa 6. As Etapas 1 a 8 estão **Concluídas**; a próxima é a **Etapa 9 — IA Opcional**.
+> **Estado atual:** **Etapa 9 — IA OPCIONAL — Concluída** (providers externos previstos no contrato, porém **não conectados**; módulo desativado por padrão em `AI_ENABLED=false`; ver [ia-opcional.md](ia-opcional.md)). Pendências herdadas: credenciais oficiais da WhatsApp Cloud API — canal permanece desativado (seção 11 de [notificacoes-whatsapp.md](notificacoes-whatsapp.md)); domínio oficial da extensão e armazenamento seguro do token (seção 11 de [extensao-chrome.md](extensao-chrome.md)); E2E de navegador da Etapa 6. As Etapas 1 a 9 estão **Concluídas**; a próxima é a **Etapa 10 — Segurança e Qualidade**.
 
 ---
 
@@ -140,13 +140,13 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 9 — IA OPCIONAL
 
-**Status:** Planejado
+**Status:** Concluída (pendência: provider externo previsto no contrato, porém não conectado)
 
 **Objetivo:** Oferecer sugestões assistivas.
 
 **Entregáveis:** Classificação sugerida; duplicidade; resumo; validação humana; controles de privacidade.
 
-**Critérios de aceite:** Sugestões exibidas como geradas por IA; exigência de confirmação humana; funcionalidade desativável.
+**Critérios de aceite:** Sugestões exibidas como geradas por IA; exigência de confirmação humana; funcionalidade desativável. **Atendidos** (11 testes unitários do provider + 9 E2E da API = 20; ver [ia-opcional.md](ia-opcional.md)).
 
 ---
 
@@ -198,7 +198,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 | 6 | Frontend e Dashboard | Concluída (pendência: E2E de navegador) |
 | 7 | Extensão Chrome | Concluída (pendências: domínio oficial e armazenamento do token) |
 | 8 | Notificações | Concluída (pendência: credenciais do WhatsApp — canal desativado) |
-| 9 | IA Opcional | Planejado |
+| 9 | IA Opcional | Concluída (pendência: provider externo não conectado) |
 | 10 | Segurança e Qualidade | Planejado |
 | 11 | Deploy | Planejado |
 | 12 | Documentação e Entrega | Planejado |

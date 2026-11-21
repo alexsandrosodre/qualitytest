@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
+import { AiModule } from './ai/ai.module';
 import { AuthModule } from './auth/auth.module';
 import { AccessModule } from './common/access/access.module';
 import { GlobalRolesGuard } from './common/guards/global-roles.guard';
@@ -50,6 +51,7 @@ import { UsersModule } from './users/users.module';
     ProjectDomainsModule,
     OccurrencesModule,
     NotificationsModule,
+    AiModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

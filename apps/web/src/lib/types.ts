@@ -6,6 +6,7 @@
  * compartilhado (nunca de `@prisma/client`).
  */
 import type {
+  AiSuggestionType,
   EnvironmentType,
   GlobalRole,
   OccurrenceCategory,
@@ -154,6 +155,33 @@ export interface AttachmentUploadView extends OccurrenceAttachmentView {
 export interface AttachmentDownloadView {
   downloadUrl: string;
   expiresInSeconds: number;
+}
+
+/** Sugestão de IA (assistiva; aplicar exige confirmação humana). */
+export interface AiSuggestionView {
+  type: AiSuggestionType;
+  value: string;
+  confidence: number;
+  rationale: string | null;
+}
+
+/** Análise de IA registrada para uma ocorrência. */
+export interface AiAnalysisView {
+  id: string;
+  occurrenceId: string;
+  provider: string;
+  model: string;
+  suggestions: AiSuggestionView[];
+  createdAt: string;
+}
+
+/** Resposta de `GET /occurrences/:occurrenceId/ai-analyses`. */
+export interface AiAnalysesResult {
+  /** `false` quando o módulo de IA está desativado neste ambiente. */
+  enabled: boolean;
+  provider: string;
+  model: string;
+  items: AiAnalysisView[];
 }
 
 /** Resposta de `POST /auth/login` e `POST /auth/refresh`. */
