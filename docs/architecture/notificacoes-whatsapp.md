@@ -1,8 +1,8 @@
 # Notificações e WhatsApp
 
-**Versão:** 1.0
+**Versão:** 1.1
 **Data:** 21/11/2026
-**Status:** Planejado (não implementado)
+**Status:** Implementado (canal WhatsApp desativado por ausência de credenciais oficiais)
 
 ---
 
@@ -10,8 +10,8 @@
 
 Descrever o serviço desacoplado de notificação do QUALITY TEST, com foco no canal WhatsApp, suas responsabilidades, resiliência, adaptadores de canal e **limitações atuais**. Fiel à **seção 7** da especificação mestra.
 
-> Conteúdo **Planejado**.
 > **Estado atual do canal WhatsApp: DESATIVADO** por ausência de credenciais oficiais.
+> Serviço implementado na **Etapa 8** (ver seção 12).
 
 ---
 
@@ -196,7 +196,28 @@ sequenceDiagram
 
 ---
 
-## 12. Referências
+## 12. Estado da implementação (Etapa 8)
+
+Implementado conforme as seções 3 a 10 acima, com o **canal WhatsApp desativado**.
+
+**API (`apps/api`)**
+- `NotificationsModule`: destinos, regras e histórico por projeto (`/projects/:projectId/notifications/...`); configuração restrita a **GESTOR** do projeto (ou ADMINISTRADOR), consulta liberada a membro ativo.
+- Reprocessamento administrativo: `POST /notifications/deliveries/:deliveryId/reprocess` (**ADMINISTRADOR**), reenfileirando com nova chave de idempotência.
+- Publicação assíncrona e **não bloqueante**: o núcleo (`OccurrencesService`) publica via token `NOTIFICATION_PUBLISHER` (BullMQ quando `NOTIFICATIONS_ENABLED` ≠ `false`; no-op caso contrário). Falha de infraestrutura não desfaz o registro.
+
+**Worker (`apps/worker`)**
+- Processador BullMQ (fila `notifications`, `attempts: 3`, backoff exponencial) com DLQ `notifications-dlq`.
+- Registro de cada tentativa em `NotificationDelivery` com **idempotência por evento/destino** (retentativa não duplica).
+- Registro de canais (`createChannelRegistry`): `WhatsAppChannelAdapter` **sempre descarta** com a mensagem de canal desativado; `EMAIL`/`TEAMS` reservados para evolução futura.
+- Mensagem padronizada conforme a seção 4; `destinationConfig` nunca guarda segredos (lista permitida validada em `@qualitytest/shared`).
+
+**Testes**
+- Unitários do worker: 9 casos (sucesso, descarte por canal desativado, idempotência, falha + retentativa, resolução por regra, filtro de prioridade, payload/ocorrência inválidos, destino desabilitado).
+- E2E da API: 19 casos (autorização, validação de config sem segredos, isolamento por projeto, regras, histórico paginado, reprocessamento).
+
+---
+
+## 13. Referências
 
 - Especificação mestra, seções 1, 7, 11, 16.
 - [contratos-api.md](contratos-api.md)

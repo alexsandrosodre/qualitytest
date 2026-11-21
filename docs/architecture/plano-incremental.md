@@ -2,7 +2,7 @@
 
 **Versão:** 1.0
 **Data:** 21/11/2026
-**Status:** Em execução (Etapas 1 a 7 concluídas; Etapa 8 planejada)
+**Status:** Em execução (Etapas 1 a 8 concluídas; próxima: Etapa 9 — IA opcional)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Detalhar as **12 etapas** do plano de execução (seção 19 da especificação mestra), com objetivo, entregáveis e critérios de aceite de cada etapa.
 
-> **Estado atual:** **Etapa 7 — EXTENSÃO CHROME — Concluída** (pendências: domínio oficial da extensão e armazenamento seguro do token — seção 11 de [extensao-chrome.md](extensao-chrome.md); e E2E de navegador da Etapa 6). As Etapas 1 a 7 estão **Concluídas**; a próxima é a **Etapa 8 — Notificações**.
+> **Estado atual:** **Etapa 8 — NOTIFICAÇÕES — Concluída** (pendência: credenciais oficiais da WhatsApp Cloud API — canal permanece desativado; seção 11 de [notificacoes-whatsapp.md](notificacoes-whatsapp.md)). Pendências herdadas: domínio oficial da extensão e armazenamento seguro do token (seção 11 de [extensao-chrome.md](extensao-chrome.md)) e E2E de navegador da Etapa 6. As Etapas 1 a 8 estão **Concluídas**; a próxima é a **Etapa 9 — IA Opcional**.
 
 ---
 
@@ -128,13 +128,13 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 8 — NOTIFICAÇÕES
 
-**Status:** Planejado
+**Status:** Concluída (pendência: credenciais oficiais do WhatsApp — canal desativado)
 
 **Objetivo:** Implementar o serviço desacoplado de notificação.
 
 **Entregáveis:** Filas; worker; adaptador de canais; WhatsApp oficial após validação de elegibilidade e credenciais; histórico e retentativas.
 
-**Critérios de aceite:** Notificação assíncrona não bloqueia criação; falha do WhatsApp não perde registro; retentativa não duplica; canal pode permanecer desativado sem credenciais.
+**Critérios de aceite:** Notificação assíncrona não bloqueia criação; falha do WhatsApp não perde registro; retentativa não duplica; canal pode permanecer desativado sem credenciais. **Atendidos** (9 testes unitários do worker + 19 E2E da API).
 
 ---
 
@@ -197,7 +197,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 | 5 | Ocorrências | Concluída |
 | 6 | Frontend e Dashboard | Concluída (pendência: E2E de navegador) |
 | 7 | Extensão Chrome | Concluída (pendências: domínio oficial e armazenamento do token) |
-| 8 | Notificações | Planejado |
+| 8 | Notificações | Concluída (pendência: credenciais do WhatsApp — canal desativado) |
 | 9 | IA Opcional | Planejado |
 | 10 | Segurança e Qualidade | Planejado |
 | 11 | Deploy | Planejado |

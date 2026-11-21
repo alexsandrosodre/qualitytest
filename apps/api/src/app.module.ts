@@ -10,6 +10,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { parseDurationToSeconds, validateEnv } from './common/config/env';
 import { TokensModule } from './common/tokens/tokens.module';
 import { HealthModule } from './health/health.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { OccurrencesModule } from './occurrences/occurrences.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProjectDomainsModule } from './project-domains/project-domains.module';
@@ -48,6 +49,7 @@ import { UsersModule } from './users/users.module';
     ProjectEnvironmentsModule,
     ProjectDomainsModule,
     OccurrencesModule,
+    NotificationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

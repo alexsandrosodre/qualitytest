@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
   UnprocessableEntityException,
@@ -15,11 +16,20 @@ import {
   RegistrationStatus,
   type Occurrence,
 } from '@prisma/client';
-import { OccurrenceHistoryAction, type Paginated } from '@qualitytest/shared';
+import {
+  NotificationEventType,
+  OccurrenceHistoryAction,
+  type NotificationJobPayload,
+  type Paginated,
+} from '@qualitytest/shared';
 import { randomInt } from 'node:crypto';
 
 import { AuditService } from '../common/audit/audit.service';
 import { ProjectAccessService } from '../common/access/project-access.service';
+import {
+  NOTIFICATION_PUBLISHER,
+  type NotificationPublisher,
+} from '../notifications/notification-publisher';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthenticatedUser } from '../common/types/authenticated-user';
 import {
@@ -88,12 +98,15 @@ const PUBLIC_CODE_MAX_ATTEMPTS = 8;
 
 @Injectable()
 export class OccurrencesService {
+  private readonly logger = new Logger(OccurrencesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
     private readonly accessService: ProjectAccessService,
     private readonly configService: ConfigService,
     @Inject(STORAGE_SERVICE) private readonly storage: StorageService,
+    @Inject(NOTIFICATION_PUBLISHER) private readonly notifications: NotificationPublisher,
   ) {}
 
   /* ------------------------------------------------------------------ */
@@ -175,6 +188,13 @@ export class OccurrencesService {
       publicCode: occurrence.publicCode,
       priority: occurrence.priority,
       categoryId: occurrence.categoryId,
+    });
+
+    this.publishNotification({
+      eventType: NotificationEventType.OCCURRENCE_CREATED,
+      occurrenceId: occurrence.id,
+      projectId: occurrence.projectId,
+      idempotencyKey: `occurrence-created:${occurrence.id}`,
     });
 
     return { occurrence: await this.buildDetailView(occurrence), replayed: false };
@@ -402,6 +422,13 @@ export class OccurrencesService {
       fields: changes.map((change) => change.field),
     });
 
+    this.publishNotification({
+      eventType: NotificationEventType.OCCURRENCE_UPDATED,
+      occurrenceId,
+      projectId: occurrence.projectId,
+      idempotencyKey: `occurrence-updated:${occurrenceId}:${updated.updatedAt.getTime()}`,
+    });
+
     return this.buildDetailView(updated);
   }
 
@@ -509,6 +536,13 @@ export class OccurrencesService {
       from: previous,
       to: dto.status,
       justification: dto.justification ?? null,
+    });
+
+    this.publishNotification({
+      eventType: NotificationEventType.OCCURRENCE_STATUS_CHANGED,
+      occurrenceId,
+      projectId: occurrence.projectId,
+      idempotencyKey: `occurrence-status:${occurrenceId}:${dto.status}`,
     });
 
     return this.buildDetailView(updated);
@@ -951,6 +985,21 @@ export class OccurrencesService {
       entityId,
       projectId,
       metadata,
+    });
+  }
+
+  /**
+   * Publica o evento de notificação sem bloquear a operação de negócio
+   * (`notificacoes-whatsapp.md`, seção 7.2): indisponibilidade da fila não
+   * impede a criação/edição da ocorrência nem expõe dados sensíveis no log.
+   */
+  private publishNotification(payload: NotificationJobPayload): void {
+    void this.notifications.publish(payload).catch((error: unknown) => {
+      this.logger.warn(
+        `Falha ao enfileirar notificação (${payload.eventType ?? 'manual'}, ` +
+          `ocorrência=${payload.occurrenceId}): ` +
+          `${error instanceof Error ? error.message : String(error)}`,
+      );
     });
   }
 }

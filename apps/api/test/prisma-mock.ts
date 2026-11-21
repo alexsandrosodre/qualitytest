@@ -9,15 +9,22 @@ import { randomUUID } from 'node:crypto';
 import {
   EnvironmentType,
   GlobalRole,
+  NotificationChannel,
+  NotificationDeliveryStatus,
+  NotificationEventType,
   OccurrenceCategory,
   OccurrencePriority,
   OccurrenceStatus,
   RegistrationStatus,
   type AuditLog,
+  type NotificationDelivery,
+  type NotificationDestination,
+  type NotificationRule,
   type Occurrence,
   type OccurrenceAttachment,
   type OccurrenceComment,
   type OccurrenceHistory,
+  type Prisma,
   type Project,
   type ProjectDomainMapping,
   type ProjectEnvironment,
@@ -92,6 +99,32 @@ export interface SeedOccurrenceAttachmentInput {
   uploadedBy: string;
 }
 
+export interface SeedNotificationDestinationInput {
+  projectId: string;
+  channel: NotificationChannel;
+  destinationConfig?: Record<string, unknown>;
+  enabled?: boolean;
+}
+
+export interface SeedNotificationRuleInput {
+  projectId: string;
+  eventType: NotificationEventType;
+  destinationId: string;
+  filters?: Record<string, unknown> | null;
+  enabled?: boolean;
+}
+
+export interface SeedNotificationDeliveryInput {
+  occurrenceId: string;
+  destinationId: string;
+  idempotencyKey: string;
+  status?: NotificationDeliveryStatus;
+  providerMessageId?: string | null;
+  attempts?: number;
+  lastError?: string | null;
+  createdAt?: Date;
+}
+
 /** Filtro simplificado de `Occurrence` usado pelo serviço da Etapa 5. */
 interface OccurrenceWhere {
   projectId?: string;
@@ -112,6 +145,12 @@ interface OccurrenceWhere {
 interface OccurrenceOrderBy {
   createdAt?: 'asc' | 'desc';
   updatedAt?: 'asc' | 'desc';
+}
+
+/** Filtro simplificado de `NotificationDelivery` usado pelo serviço da Etapa 8. */
+interface NotificationDeliveryWhere {
+  destinationId?: { in: string[] };
+  status?: NotificationDeliveryStatus;
 }
 
 /** Filtro simplificado de `Project` usado pelos serviços da Etapa 4. */
@@ -366,6 +405,50 @@ export interface PrismaMock {
       };
     }): Promise<OccurrenceHistory>;
   };
+  notificationDestination: {
+    findUnique(args: { where: { id: string } }): Promise<NotificationDestination | null>;
+    findMany(args?: {
+      where?: { projectId?: string };
+      orderBy?: { channel?: 'asc' | 'desc' };
+    }): Promise<NotificationDestination[]>;
+    create(args: {
+      data: {
+        projectId: string;
+        channel: NotificationChannel;
+        destinationConfig: Prisma.InputJsonValue;
+        enabled?: boolean;
+      };
+    }): Promise<NotificationDestination>;
+    update(args: {
+      where: { id: string };
+      data: Partial<{ destinationConfig: Prisma.InputJsonValue; enabled: boolean }>;
+    }): Promise<NotificationDestination>;
+  };
+  notificationRule: {
+    findMany(args?: {
+      where?: { projectId?: string };
+      orderBy?: { eventType?: 'asc' | 'desc' };
+    }): Promise<NotificationRule[]>;
+    create(args: {
+      data: {
+        projectId: string;
+        eventType: NotificationEventType;
+        destinationId: string;
+        enabled?: boolean;
+        filters?: Prisma.InputJsonValue;
+      };
+    }): Promise<NotificationRule>;
+  };
+  notificationDelivery: {
+    findUnique(args: { where: { id: string } }): Promise<NotificationDelivery | null>;
+    findMany(args?: {
+      where?: NotificationDeliveryWhere;
+      skip?: number;
+      take?: number;
+      orderBy?: { createdAt?: 'asc' | 'desc' };
+    }): Promise<NotificationDelivery[]>;
+    count(args?: { where?: NotificationDeliveryWhere }): Promise<number>;
+  };
   $queryRaw: () => Promise<unknown[]>;
   /** Dados brutos para asserções em testes. */
   state: {
@@ -380,6 +463,9 @@ export interface PrismaMock {
     comments: OccurrenceComment[];
     attachments: OccurrenceAttachment[];
     history: OccurrenceHistory[];
+    notificationDestinations: NotificationDestination[];
+    notificationRules: NotificationRule[];
+    notificationDeliveries: NotificationDelivery[];
   };
   seedUser(input: SeedUserInput): User;
   seedProject(input: SeedProjectInput): Project;
@@ -389,6 +475,9 @@ export interface PrismaMock {
   seedOccurrence(input: SeedOccurrenceInput): Occurrence;
   seedOccurrenceComment(input: SeedOccurrenceCommentInput): OccurrenceComment;
   seedOccurrenceAttachment(input: SeedOccurrenceAttachmentInput): OccurrenceAttachment;
+  seedNotificationDestination(input: SeedNotificationDestinationInput): NotificationDestination;
+  seedNotificationRule(input: SeedNotificationRuleInput): NotificationRule;
+  seedNotificationDelivery(input: SeedNotificationDeliveryInput): NotificationDelivery;
 }
 
 function clone<T>(value: T): T {
@@ -519,6 +608,28 @@ function matchOccurrenceWhere(occurrence: Occurrence, where: OccurrenceWhere | u
   return true;
 }
 
+function matchDeliveryWhere(
+  delivery: NotificationDelivery,
+  where: NotificationDeliveryWhere | undefined,
+): boolean {
+  if (where === undefined) {
+    return true;
+  }
+
+  if (
+    where.destinationId !== undefined &&
+    !where.destinationId.in.includes(delivery.destinationId)
+  ) {
+    return false;
+  }
+
+  if (where.status !== undefined && delivery.status !== where.status) {
+    return false;
+  }
+
+  return true;
+}
+
 export function createPrismaMock(): PrismaMock {
   const users: User[] = [];
   const projects: Project[] = [];
@@ -531,6 +642,9 @@ export function createPrismaMock(): PrismaMock {
   const comments: OccurrenceComment[] = [];
   const attachments: OccurrenceAttachment[] = [];
   const history: OccurrenceHistory[] = [];
+  const notificationDestinations: NotificationDestination[] = [];
+  const notificationRules: NotificationRule[] = [];
+  const notificationDeliveries: NotificationDelivery[] = [];
 
   function seedUser(input: SeedUserInput): User {
     const now = new Date();
@@ -657,6 +771,51 @@ export function createPrismaMock(): PrismaMock {
     };
     attachments.push(attachment);
     return attachment;
+  }
+
+  function seedNotificationDestination(
+    input: SeedNotificationDestinationInput,
+  ): NotificationDestination {
+    const destination: NotificationDestination = {
+      id: randomUUID(),
+      projectId: input.projectId,
+      channel: input.channel,
+      destinationConfig: (input.destinationConfig ?? {}) as Prisma.JsonValue,
+      enabled: input.enabled ?? false,
+    };
+    notificationDestinations.push(destination);
+    return destination;
+  }
+
+  function seedNotificationRule(input: SeedNotificationRuleInput): NotificationRule {
+    const rule: NotificationRule = {
+      id: randomUUID(),
+      projectId: input.projectId,
+      eventType: input.eventType,
+      filters: (input.filters ?? null) as Prisma.JsonValue,
+      destinationId: input.destinationId,
+      enabled: input.enabled ?? true,
+    };
+    notificationRules.push(rule);
+    return rule;
+  }
+
+  function seedNotificationDelivery(input: SeedNotificationDeliveryInput): NotificationDelivery {
+    const now = input.createdAt ?? new Date();
+    const delivery: NotificationDelivery = {
+      id: randomUUID(),
+      occurrenceId: input.occurrenceId,
+      destinationId: input.destinationId,
+      idempotencyKey: input.idempotencyKey,
+      status: input.status ?? NotificationDeliveryStatus.PENDENTE,
+      providerMessageId: input.providerMessageId ?? null,
+      attempts: input.attempts ?? 0,
+      lastError: input.lastError ?? null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    notificationDeliveries.push(delivery);
+    return delivery;
   }
 
   const mock: PrismaMock = {
@@ -1194,6 +1353,120 @@ export function createPrismaMock(): PrismaMock {
       },
     },
 
+    notificationDestination: {
+      async findUnique(args) {
+        const destination = notificationDestinations.find(
+          (candidate) => candidate.id === args.where.id,
+        );
+        return destination === undefined ? null : clone(destination);
+      },
+
+      async findMany(args) {
+        const filtered = notificationDestinations.filter(
+          (destination) =>
+            args?.where?.projectId === undefined ||
+            destination.projectId === args.where?.projectId,
+        );
+        const direction = args?.orderBy?.channel ?? 'asc';
+        const sorted = [...filtered].sort((a, b) =>
+          direction === 'desc'
+            ? b.channel.localeCompare(a.channel)
+            : a.channel.localeCompare(b.channel),
+        );
+        return clone(sorted);
+      },
+
+      async create(args) {
+        const destination: NotificationDestination = {
+          id: randomUUID(),
+          projectId: args.data.projectId,
+          channel: args.data.channel,
+          destinationConfig: args.data.destinationConfig as Prisma.JsonValue,
+          enabled: args.data.enabled ?? false,
+        };
+        notificationDestinations.push(destination);
+        return clone(destination);
+      },
+
+      async update(args) {
+        const index = notificationDestinations.findIndex(
+          (candidate) => candidate.id === args.where.id,
+        );
+        const current = notificationDestinations[index];
+        if (index === -1 || current === undefined) {
+          throw new Error(`Destino de notificação não encontrado no mock: ${args.where.id}`);
+        }
+        const updated: NotificationDestination = {
+          ...current,
+          ...(args.data.destinationConfig === undefined
+            ? {}
+            : { destinationConfig: args.data.destinationConfig as Prisma.JsonValue }),
+          ...(args.data.enabled === undefined ? {} : { enabled: args.data.enabled }),
+        };
+        notificationDestinations[index] = updated;
+        return clone(updated);
+      },
+    },
+
+    notificationRule: {
+      async findMany(args) {
+        const filtered = notificationRules.filter(
+          (rule) =>
+            args?.where?.projectId === undefined || rule.projectId === args.where?.projectId,
+        );
+        const direction = args?.orderBy?.eventType ?? 'asc';
+        const sorted = [...filtered].sort((a, b) =>
+          direction === 'desc'
+            ? b.eventType.localeCompare(a.eventType)
+            : a.eventType.localeCompare(b.eventType),
+        );
+        return clone(sorted);
+      },
+
+      async create(args) {
+        const rule: NotificationRule = {
+          id: randomUUID(),
+          projectId: args.data.projectId,
+          eventType: args.data.eventType,
+          filters: (args.data.filters ?? null) as Prisma.JsonValue,
+          destinationId: args.data.destinationId,
+          enabled: args.data.enabled ?? true,
+        };
+        notificationRules.push(rule);
+        return clone(rule);
+      },
+    },
+
+    notificationDelivery: {
+      async findUnique(args) {
+        const delivery = notificationDeliveries.find(
+          (candidate) => candidate.id === args.where.id,
+        );
+        return delivery === undefined ? null : clone(delivery);
+      },
+
+      async findMany(args) {
+        const filtered = notificationDeliveries.filter((delivery) =>
+          matchDeliveryWhere(delivery, args?.where),
+        );
+        const direction = args?.orderBy?.createdAt ?? 'desc';
+        const sorted = [...filtered].sort((a, b) =>
+          direction === 'asc'
+            ? a.createdAt.getTime() - b.createdAt.getTime()
+            : b.createdAt.getTime() - a.createdAt.getTime(),
+        );
+        const skip = args?.skip ?? 0;
+        const take = args?.take ?? sorted.length;
+        return clone(sorted.slice(skip, skip + take));
+      },
+
+      async count(args) {
+        return notificationDeliveries.filter((delivery) =>
+          matchDeliveryWhere(delivery, args?.where),
+        ).length;
+      },
+    },
+
     async $queryRaw() {
       return [{ '?column?': 1 }];
     },
@@ -1210,6 +1483,9 @@ export function createPrismaMock(): PrismaMock {
       comments,
       attachments,
       history,
+      notificationDestinations,
+      notificationRules,
+      notificationDeliveries,
     },
 
     seedUser,
@@ -1220,6 +1496,9 @@ export function createPrismaMock(): PrismaMock {
     seedOccurrence,
     seedOccurrenceComment,
     seedOccurrenceAttachment,
+    seedNotificationDestination,
+    seedNotificationRule,
+    seedNotificationDelivery,
   };
 
   return mock;

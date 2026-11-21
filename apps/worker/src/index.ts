@@ -1,112 +1,147 @@
 /**
- * Worker BullMQ do QUALITY TEST - ESQUELETO (Etapa 2).
+ * Worker de notificações do QUALITY TEST (ETAPA 8).
  *
- * Nesta etapa existe somente a infraestrutura da fila `notifications` e um
- * processor que apenas registra o recebimento do job em log. NÃO há lógica de
- * negócio nem integração com WhatsApp (previsto para a Etapa 8).
+ * Consome a fila `notifications` (BullMQ/Redis), mantendo a notificação
+ * desacoplada do núcleo: a ocorrência é salva pela API antes de qualquer envio e
+ * a indisponibilidade do canal jamais desfaz o registro (seções 5 e 8 de
+ * `notificacoes-whatsapp.md`).
+ *
+ * - Retentativas com backoff: configuradas na publicação (`NOTIFICATION_JOB_OPTIONS`).
+ * - Dead-letter queue: jobs que esgotam as tentativas são copiados para
+ *   `notifications-dlq`, de onde podem ser inspecionados e reprocessados
+ *   administrativamente.
+ * - Canal WhatsApp: DESATIVADO até haver credenciais oficiais (seção 7.1).
  */
-import path from 'node:path';
+import { PrismaClient } from '@prisma/client';
+import { Queue, Worker, type Job } from 'bullmq';
 
-import { Job, Queue, Worker } from 'bullmq';
+import { createChannelRegistry } from './channels';
+import {
+  NOTIFICATIONS_DLQ,
+  NOTIFICATIONS_QUEUE,
+  readWorkerConfig,
+  type RedisConnectionOptions,
+  type WorkerLogger,
+} from './config';
+import { createNotificationProcessor } from './processor';
+import type { NotificationJobPayload } from '@qualitytest/shared';
 
-// Carrega o `.env` da raiz do monorepo quando existir (node >= 20.12).
-// O arquivo é opcional: em ambientes de execução as variáveis vêm do próprio ambiente.
-try {
-  process.loadEnvFile(path.resolve(__dirname, '../../../.env'));
-} catch {
-  // Sem `.env` na raiz: segue com as variáveis já presentes no ambiente.
+export { NOTIFICATIONS_DLQ, NOTIFICATIONS_QUEUE, readRedisConnection } from './config';
+
+/** Payload da DLQ: o evento original acrescido do motivo da falha. */
+export interface DeadLetterPayload extends NotificationJobPayload {
+  failedReason?: string;
+  attemptsMade?: number;
 }
 
-export const NOTIFICATIONS_QUEUE = 'notifications';
+/** Logger mínimo em console (sem expor credenciais). */
+const logger: WorkerLogger = {
+  info: (message, meta) => {
+    console.log(`[worker] ${message}${meta === undefined ? '' : ` ${JSON.stringify(meta)}`}`);
+  },
+  warn: (message, meta) => {
+    console.warn(`[worker] ${message}${meta === undefined ? '' : ` ${JSON.stringify(meta)}`}`);
+  },
+  error: (message, meta) => {
+    console.error(`[worker] ${message}${meta === undefined ? '' : ` ${JSON.stringify(meta)}`}`);
+  },
+};
 
-export interface RedisConnectionOptions {
-  host: string;
-  port: number;
-  db: number;
-  password?: string;
-}
-
-export interface NotificationJobData {
-  eventType: string;
-  occurrenceId: string;
-  projectId: string;
-  destinationId?: string;
-  idempotencyKey?: string;
-  [key: string]: unknown;
-}
-
-export function readRedisConnection(): RedisConnectionOptions {
-  const rawPort = Number.parseInt(process.env.REDIS_PORT ?? '6379', 10);
-  const rawDb = Number.parseInt(process.env.REDIS_DB ?? '0', 10);
-  const password = process.env.REDIS_PASSWORD;
-
-  return {
-    host: process.env.REDIS_HOST ?? 'localhost',
-    port: Number.isNaN(rawPort) ? 6379 : rawPort,
-    db: Number.isNaN(rawDb) ? 0 : rawDb,
-    ...(password !== undefined && password.length > 0 ? { password } : {}),
-  };
-}
-
+/** Cria a fila principal de notificações (usada para inspeção/reprocesso). */
 export function createNotificationsQueue(
   connection: RedisConnectionOptions,
-): Queue<NotificationJobData> {
-  return new Queue<NotificationJobData>(NOTIFICATIONS_QUEUE, { connection });
-}
-
-/**
- * Processor placeholder. Não implementa nenhuma regra de negócio.
- */
-async function processNotification(job: Job<NotificationJobData>): Promise<void> {
-  console.log(
-    `[worker] job recebido: id=${job.id ?? 'sem-id'} nome=${job.name} evento=${job.data.eventType} ` +
-      `ocorrencia=${job.data.occurrenceId}`,
-  );
+): Queue<NotificationJobPayload> {
+  return new Queue<NotificationJobPayload>(NOTIFICATIONS_QUEUE, { connection });
 }
 
 async function main(): Promise<void> {
-  const connection = readRedisConnection();
-  const queue = createNotificationsQueue(connection);
+  const config = readWorkerConfig();
+  const prisma = new PrismaClient();
+  await prisma.$connect();
 
-  const worker = new Worker<NotificationJobData>(NOTIFICATIONS_QUEUE, processNotification, {
-    connection,
-    concurrency: 5,
+  const queue = createNotificationsQueue(config.connection);
+  const deadLetterQueue = new Queue<DeadLetterPayload>(NOTIFICATIONS_DLQ, {
+    connection: config.connection,
   });
 
-  worker.on('completed', (job) => {
-    console.log(`[worker] job concluído: ${job.id ?? 'sem-id'}`);
+  // Sem listeners, indisponibilidade do Redis vira erro não tratado.
+  queue.on('error', (error: Error) => logger.warn(`Erro na fila "${NOTIFICATIONS_QUEUE}": ${error.message}`));
+  deadLetterQueue.on('error', (error: Error) =>
+    logger.warn(`Erro na fila "${NOTIFICATIONS_DLQ}": ${error.message}`),
+  );
+
+  const processor = createNotificationProcessor({
+    prisma,
+    channels: createChannelRegistry(),
+    logger,
+    webBaseUrl: config.webBaseUrl,
   });
 
-  worker.on('failed', (job, error) => {
-    // Erros são registrados sem expor credenciais ou tokens.
-    console.error(`[worker] job falhou: ${job?.id ?? 'sem-id'} - ${error.message}`);
+  const worker = new Worker<NotificationJobPayload>(NOTIFICATIONS_QUEUE, processor, {
+    connection: config.connection,
+    concurrency: config.concurrency,
   });
 
-  worker.on('error', (error) => {
-    console.error(`[worker] erro na fila ${NOTIFICATIONS_QUEUE}: ${error.message}`);
+  worker.on('completed', (job: Job<NotificationJobPayload>) => {
+    logger.info('Job concluído.', { id: job.id ?? 'sem-id' });
   });
 
+  worker.on('failed', (job: Job<NotificationJobPayload> | undefined, error: Error) => {
+    logger.error(`Job falhou: ${job?.id ?? 'sem-id'}.`, { motivo: error.message });
+
+    // Dead-letter queue: copia o job apenas quando as tentativas se esgotarem.
+    if (job === undefined) {
+      return;
+    }
+    const maxAttempts = job.opts.attempts ?? 1;
+    if (job.attemptsMade < maxAttempts) {
+      return;
+    }
+
+    void deadLetterQueue
+      .add(
+        job.name,
+        {
+          ...job.data,
+          failedReason: error.message,
+          attemptsMade: job.attemptsMade,
+        },
+        { removeOnComplete: false, removeOnFail: false },
+      )
+      .catch((dlqError: unknown) => {
+        logger.warn('Falha ao registrar job na DLQ.', {
+          motivo: dlqError instanceof Error ? dlqError.message : String(dlqError),
+        });
+      });
+  });
+
+  worker.on('error', (error: Error) => logger.error(`Erro na fila "${NOTIFICATIONS_QUEUE}": ${error.message}`));
+
+  let shuttingDown = false;
   const shutdown = async (signal: string): Promise<void> => {
-    console.log(`[worker] encerrando (${signal})...`);
+    if (shuttingDown) {
+      return;
+    }
+    shuttingDown = true;
+    logger.info(`Encerrando (${signal})...`);
     await worker.close();
+    await deadLetterQueue.close();
     await queue.close();
+    await prisma.$disconnect();
     process.exit(0);
   };
 
-  process.on('SIGINT', () => {
-    void shutdown('SIGINT');
-  });
-  process.on('SIGTERM', () => {
-    void shutdown('SIGTERM');
-  });
+  process.on('SIGINT', () => void shutdown('SIGINT'));
+  process.on('SIGTERM', () => void shutdown('SIGTERM'));
 
-  console.log(
-    `[worker] aguardando jobs na fila "${NOTIFICATIONS_QUEUE}" ` +
-      `(${connection.host}:${connection.port}/db${connection.db})`,
+  logger.info(
+    `Aguardando jobs na fila "${NOTIFICATIONS_QUEUE}" ` +
+      `(${config.connection.host}:${config.connection.port}/db${config.connection.db}), ` +
+      `concorrência=${config.concurrency}.`,
   );
 }
 
 main().catch((error: unknown) => {
-  console.error(`[worker] falha ao iniciar: ${error instanceof Error ? error.message : String(error)}`);
+  logger.error(`Falha ao iniciar o worker: ${error instanceof Error ? error.message : String(error)}`);
   process.exit(1);
 });

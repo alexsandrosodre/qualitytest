@@ -132,7 +132,8 @@ export const occurrenceFilterSchema = paginationQuerySchema.extend({
 /* -------------------------------------------------------------------------- */
 
 export const notificationJobPayloadSchema = z.object({
-  eventType: notificationEventTypeSchema,
+  // Ausente no reprocessamento administrativo (destino já informado).
+  eventType: notificationEventTypeSchema.optional(),
   occurrenceId: idSchema,
   projectId: idSchema,
   destinationId: idSchema.optional(),

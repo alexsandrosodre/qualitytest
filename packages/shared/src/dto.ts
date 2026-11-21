@@ -137,6 +137,15 @@ export interface NotificationDestinationDTO {
   enabled: boolean;
 }
 
+export interface NotificationRuleDTO {
+  id: string;
+  projectId: string;
+  eventType: NotificationEventType;
+  filters: Record<string, unknown> | null;
+  destinationId: string;
+  enabled: boolean;
+}
+
 export interface NotificationDeliveryDTO {
   id: string;
   occurrenceId: string;
@@ -150,11 +159,16 @@ export interface NotificationDeliveryDTO {
   updatedAt: string;
 }
 
-/** Evento publicado na fila de notificações (Etapa 8 consumirá de fato). */
+/** Evento publicado na fila de notificações (consumido pelo worker — Etapa 8). */
 export interface NotificationJobPayload {
-  eventType: NotificationEventType;
+  /**
+   * Tipo do evento de negócio. Obrigatório para eventos de ocorrência; ausente
+   * no reprocessamento administrativo (quando o destino já é conhecido).
+   */
+  eventType?: NotificationEventType;
   occurrenceId: string;
   projectId: string;
+  /** Destino específico; quando ausente, o worker resolve pelas regras do projeto. */
   destinationId?: string;
   /**
    * Código do evento de negócio (ex.: evento idempotente por ocorrência+destino).

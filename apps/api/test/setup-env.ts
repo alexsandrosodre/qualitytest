@@ -17,3 +17,7 @@ process.env.THROTTLE_LIMIT = process.env.THROTTLE_LIMIT ?? '10000';
 // sobrescreve e o `StorageModule` seleciona o adaptador in-memory.
 process.env.S3_ENDPOINT = '';
 process.env.S3_BUCKET = '';
+// Desabilita a publicação real na fila nos testes: sem Redis, o publicador
+// BullMQ ficaria tentando reconectar e manteria handles abertos. Os testes de
+// notificação injetam um publicador falso explicitamente.
+process.env.NOTIFICATIONS_ENABLED = process.env.NOTIFICATIONS_ENABLED ?? 'false';
