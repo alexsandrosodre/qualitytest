@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run prisma:generate && DATABASE_URL=\"$DATABASE_POSTGRES_URL_NON_POOLING\" npx prisma migrate deploy && nest build",
+  "buildCommand": "npm run prisma:generate && DATABASE_URL=\"$DATABASE_POSTGRES_URL_NON_POOLING\" npx prisma migrate deploy && npx nest build",
   "installCommand": "npm install"
 }
