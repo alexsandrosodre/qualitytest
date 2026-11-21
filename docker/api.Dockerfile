@@ -30,10 +30,7 @@ RUN apt-get update \
 COPY . .
 RUN npm ci
 
-# Gera o Prisma Client (necessário para compilar a API).
-RUN npm run db:generate
-
-# Compila a API (saída em apps/api/dist).
+# O build da API gera o Prisma Client e compila NestJS (apps/api/dist).
 RUN npm run build --workspace @qualitytest/api
 
 # --- Estágio de execução -----------------------------------------------------

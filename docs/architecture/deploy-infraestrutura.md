@@ -8,9 +8,9 @@
 
 ## 1. Objetivo
 
-Definir a estratégia de deploy e infraestrutura do QUALITY TEST, fiel à **seção 13** da especificação mestra: Vercel para o frontend, API NestJS em container, workers BullMQ persistentes, serviços gerenciados externos e CI/CD via GitHub Actions.
+Definir a estratégia de deploy e infraestrutura do QUALITY TEST, fiel à **seção 13** da especificação mestra: Vercel para frontend e API serverless (após validação), worker BullMQ em processo contínuo quando habilitado, PostgreSQL gerenciado e CI/CD via GitHub Actions.
 
-> Os artefatos de build já estão versionados (Dockerfiles, `.dockerignore`, scripts e job de CI). **Nenhum deploy foi realizado e nenhuma credencial está definida.** O que depende de decisão externa permanece **PENDENTE DE DEFINIÇÃO**.
+> O frontend está publicado na Vercel. O projeto `api` também existe na Vercel e o recurso Supabase `qualitytest` está conectado, mas a API ainda retorna HTTP 500; a adaptação serverless está em andamento. Os Dockerfiles continuam disponíveis para hospedagem em container.
 
 ---
 
@@ -27,7 +27,7 @@ O repositório oficial será conectado à Vercel para implantação do frontend 
 | Componente | Onde executa | Artefato no repositório |
 |---|---|---|
 | Frontend Next.js | **Vercel** | `apps/web` (configuração na plataforma — ver §7) |
-| Backend NestJS | Serviço/container apropriado (ex.: Render, via `render.yaml`) | [docker/api.Dockerfile](../../docker/api.Dockerfile) |
+| Backend NestJS | Vercel Functions (adaptação serverless em andamento); container como alternativa | [`apps/api/api/[...path].ts`](../../apps/api/api/%5B...path%5D.ts), [docker/api.Dockerfile](../../docker/api.Dockerfile) |
 | Workers BullMQ | Infraestrutura com **processos contínuos** | [docker/worker.Dockerfile](../../docker/worker.Dockerfile) |
 | Redis | **Serviço gerenciado externo** | Consumido via `REDIS_*` |
 | PostgreSQL | **Serviço gerenciado externo** | Consumido via `DATABASE_URL` |
@@ -42,6 +42,7 @@ O repositório oficial será conectado à Vercel para implantação do frontend 
 |---|---|
 | `.dockerignore` | Reduz o contexto Docker e evita copiar segredos (`node_modules`, `dist`, `.next`, `docs`, `.env`, etc.) |
 | `docker/api.Dockerfile` | Build multi-stage da API (NestJS `apps/api/dist/main.js`) + `HEALTHCHECK` em `/api/health` |
+| `apps/api/api/[...path].ts` | Handler serverless catch-all da API no projeto Vercel `api` |
 | `docker/worker.Dockerfile` | Build multi-stage do worker (`apps/worker/dist/index.js`) |
 | `.env.production.example` | Modelo documentado das variáveis de produção (sem segredos reais) |
 | `render.yaml` | Blueprint do Render (plano free) para a API: Dockerfile, health check e variáveis (§7.3) |
@@ -111,10 +112,10 @@ flowchart TB
 
     subgraph Prod["Production"]
         ProdWeb["Next.js - Vercel"]
-        ProdAPI["API NestJS - container"]
+        ProdAPI["API NestJS - Vercel Function"]
         ProdWorkers["Workers BullMQ - processos continuos"]
         ProdPG[("PostgreSQL gerenciado")]
-        ProdRedis[("Redis gerenciado")]
+        ProdRedis[("Redis gerenciado (opcional)")]
         ProdS3[("Storage S3")]
         ProdObs["Logs / Monitoramento"]
         ProdSecrets["Cofre de secrets"]
@@ -126,7 +127,7 @@ flowchart TB
 
     ProdWeb -->|HTTPS| ProdAPI
     ProdAPI --> ProdPG
-    ProdAPI --> ProdRedis
+    ProdAPI -.->|quando habilitado| ProdRedis
     ProdAPI --> ProdS3
     ProdRedis --> ProdWorkers
     ProdWorkers --> WA
@@ -215,7 +216,9 @@ Ordem recomendada em uma release: (1) CI verde; (2) `publish-images`; (3) `migra
 | `JWT_SECRET` | API | **≥ 32 caracteres**, exclusivo; a API recusa o valor de exemplo em produção (ETAPA 10) |
 | `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | API | TTLs de access/refresh token |
 | `THROTTLE_TTL` / `THROTTLE_LIMIT` | API | Rate limiting global |
-| `DATABASE_URL` | API, worker | PostgreSQL gerenciado |
+| `DATABASE_URL` | API, worker, migrações | Prisma; em Vercel é preenchida pelo bootstrap com `DATABASE_POSTGRES_PRISMA_URL` quando ausente |
+| `DATABASE_POSTGRES_PRISMA_URL` | API na Vercel | URL pooled gerada pela integração Supabase para conexões de runtime |
+| `DATABASE_POSTGRES_URL_NON_POOLING` | Migrações/seed | URL direta gerada pela integração Supabase; não usar no runtime serverless |
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB` / `REDIS_PASSWORD` | API, worker | Redis gerenciado (fila BullMQ) |
 | `NOTIFICATIONS_ENABLED` / `NOTIFICATIONS_CONCURRENCY` | API, worker | Fila de notificações |
 | `WEB_BASE_URL` | API, worker | URL pública do frontend (links nas mensagens) |
@@ -233,25 +236,26 @@ Estado real detectado (não presumido):
 - Projeto **`web`**, no escopo `alexsandros-projects-319829e8`, vinculado ao repositório `alexsandrosodre/qualitytest`.
 - **Root Directory:** `apps/web` — **Framework preset:** Next.js — **Production Branch:** `main`.
 - Produção: `https://web-alexsandros-projects-319829e8.vercel.app`.
-- `NEXT_PUBLIC_API_URL` ainda **não definida** (depende da URL pública da API): o frontend publica, mas não conversa com a API.
-- O backend (API/worker) **não** roda na Vercel — apenas o frontend.
+- `NEXT_PUBLIC_API_URL` ainda **não definida**; o frontend publica, mas ainda não conversa com a API.
+- O projeto `api` usa Root Directory `apps/api` e domínio `https://api-seven-psi-11.vercel.app`. O deploy atual retorna HTTP 500; a função serverless está sendo implementada e ainda não foi validada/publicada.
+- O recurso Supabase `qualitytest` foi conectado ao projeto `api`. A integração fornece `DATABASE_POSTGRES_PRISMA_URL` (pooler) e `DATABASE_POSTGRES_URL_NON_POOLING` (direta); o bootstrap serverless mapeia a primeira para `DATABASE_URL` quando necessário.
 
 > `NEXT_PUBLIC_API_URL` é embutida no **build** do Next.js: alterá-la exige um novo deploy.
 
-### 7.3 Stack inicial sem custo (Vercel + Render + Neon)
+### 7.3 Stack inicial sem custo (Vercel + Supabase)
 
 Alocação escolhida para a primeira publicação, priorizando custo zero:
 
 | Componente | Provedor | Observação |
 |---|---|---|
 | Frontend Next.js | Vercel (Hobby) | projeto `web` (§7.2) |
-| API NestJS | Render (plano free) | [`render.yaml`](../../render.yaml); "dorme" após ~15 min de ociosidade (cold start ~1 min) |
-| PostgreSQL | Neon (free) | `DATABASE_URL` (usar a URL com pooler) |
+| API NestJS | Vercel Functions (Hobby) | Handler serverless em `apps/api/api/[...path].ts`; requer adaptação e validação |
+| PostgreSQL | Supabase | `DATABASE_POSTGRES_PRISMA_URL` pooled em runtime; `DATABASE_POSTGRES_URL_NON_POOLING` para tarefas administrativas/migrações |
 | Redis + worker BullMQ | **não usados** | `NOTIFICATIONS_ENABLED=false`; a API usa o publicador no-op |
 | IA | **desativada** | `AI_ENABLED=false` (padrão) |
 | Storage de anexos | **em memória** | sem `S3_*`, uploads não persistem entre reinícios |
 
-Limitações assumidas nesta fase: notificações (fila/WhatsApp) inativas, anexos não persistentes e cold start da API. Migrações e seed são aplicados manualmente, a partir da raiz do monorepo, com `DATABASE_URL` apontando para o Neon (§8.2).
+Limitações assumidas nesta fase: notificações (fila/WhatsApp) inativas, worker contínuo fora da Vercel, anexos não persistentes e limites/duração de execução de funções serverless. Migrações e seed são aplicados manualmente com a conexão direta do Supabase (§8.2). O plano Hobby e os limites aplicáveis devem ser confirmados antes de uso operacional.
 
 ---
 
@@ -294,7 +298,8 @@ pg_restore --clean --no-owner --dbname=qualitytest_restore qualitytest-YYYYMMDD.
 As migrações Prisma são aplicadas de forma controlada, **fora do boot** da aplicação:
 
 ```bash
-# A partir da raiz do monorepo, com DATABASE_URL apontando para o banco alvo
+# A partir da raiz do monorepo, com DATABASE_URL apontando para o banco alvo.
+# No Supabase, use a URL direta (DATABASE_POSTGRES_URL_NON_POOLING), não a pooled.
 npm run db:migrate:deploy
 ```
 
@@ -302,10 +307,11 @@ npm run db:migrate:deploy
 - **Nunca** usar `prisma migrate dev` em produção (pode resetar dados).
 - Aplicar antes de publicar a nova versão da API que depende do schema.
 - Registrar a versão aplicada e o responsável.
+- A integração Vercel/Supabase guarda a URL direta em `DATABASE_POSTGRES_URL_NON_POOLING`; ao executar migrações fora da Vercel, configure `DATABASE_URL` com esse valor no ambiente do comando.
 
 ### 8.3 Rollback (runbook)
 
-- **Aplicação:** publicar novamente a imagem/versão anterior (tag imutável por release).
+- **Aplicação:** reverter para o deployment anterior da Vercel ou publicar a versão anterior da imagem Docker.
 - **Banco:** migrações do Prisma são **somente avanço**; o rollback típico é aplicar uma **nova migração** que desfaça a mudança (expand/contract), nunca editar migração já aplicada.
 - **Configuração:** reverter variáveis de ambiente/segredos para os valores anteriores.
 - **Validação pós-rollback:** `/api/health` respondendo e verificação das tabelas-chave.
@@ -347,11 +353,11 @@ npm run smoke:test
 ## 10. Pontos pendentes de definição
 
 - Domínio oficial e HTTPS — **PENDENTE DE DEFINIÇÃO**.
-- Conta/projeto na Vercel — **DEFINIDO**: projeto `web` no escopo `alexsandros-projects-319829e8` (§7.2).
-- Provedor de PostgreSQL gerenciado — **DEFINIDO nesta fase**: Neon (free tier, §7.3).
+- Projetos na Vercel — **DEFINIDOS**: `web` e `api`, no escopo `alexsandros-projects-319829e8` (§7.2).
+- Provedor de PostgreSQL gerenciado — **DEFINIDO nesta fase**: Supabase, recurso `qualitytest` conectado ao projeto `api` (§7.3).
 - Provider de Redis gerenciado — **não usado nesta fase** (`NOTIFICATIONS_ENABLED=false`, §7.3).
 - Provedor de storage S3-compatível — **PENDENTE**; nesta fase o storage cai em memória (§7.3).
-- URL pública da API (Render) — **PENDENTE**: enquanto não existir, `NEXT_PUBLIC_API_URL` fica indefinida.
+- API serverless — **PENDENTE DE VALIDAÇÃO**: projeto existe, mas responde HTTP 500; `NEXT_PUBLIC_API_URL` permanece indefinida até a API passar no smoke test.
 - Registry de imagens: **GHCR por padrão** (workflow `release.yml`, via `GITHUB_TOKEN`); trocar apenas se houver exigência corporativa por outro registro.
 - Solução de logs/monitoramento — **PENDENTE DE DEFINIÇÃO**.
 - Nomes de branches de feature/correção — **PENDENTE DE DEFINIÇÃO**.

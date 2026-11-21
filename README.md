@@ -3,11 +3,12 @@
 Plataforma corporativa para centralizar o registro e o acompanhamento de testes, defeitos,
 inconsistências e problemas identificados durante a homologação dos sistemas.
 
-> **Estado atual: Etapas 1 a 10 concluídas; Etapa 11 (DEPLOY) em preparação; Etapa 12 (DOCUMENTAÇÃO E ENTREGA) concluída, exceto o PDF consolidado.**
+> **Estado atual: Etapas 1 a 10 concluídas; Etapa 11 (DEPLOY) em andamento; Etapa 12 (DOCUMENTAÇÃO E ENTREGA) concluída, exceto o PDF consolidado.**
 > A plataforma já inclui API (auth, usuários, projetos, ocorrências, notificações e IA opcional),
 > frontend Next.js, worker BullMQ e extensão Chrome. Os artefatos de deploy (Dockerfiles, CI e
-> runbooks) estão versionados, mas **nenhum deploy de produção foi executado** — isso depende de
-> autorização explícita e da definição de provedores/domínio/credenciais.
+> runbooks) estão versionados. O frontend está publicado na Vercel; a API tem um projeto Vercel
+> e um banco Supabase conectado, mas ainda está em adaptação para serverless e não está operacional.
+> O worker contínuo não roda na Vercel e permanece fora desta primeira publicação.
 > A especificação mestra está em `Quality_Test_Especificacao_Mestre_GitHub_Vercel_v4.txt` e a
 > documentação em `docs/` (índice em `docs/README.md`).
 
@@ -232,7 +233,8 @@ reais) está em `.env.production.example`. Destaques:
 
 | Variável | Uso |
 |---|---|
-| `DATABASE_URL` | Conexão PostgreSQL usada pelo Prisma |
+| `DATABASE_URL` | Conexão PostgreSQL usada pelo Prisma; na Vercel usa fallback para `DATABASE_POSTGRES_PRISMA_URL` |
+| `DATABASE_POSTGRES_URL_NON_POOLING` | URL direta do Supabase para migrações e tarefas administrativas |
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB` / `REDIS_PASSWORD` | Conexão Redis (BullMQ) |
 | `API_PORT` | Porta da API (padrão 3333) |
 | `CORS_ORIGIN` | Origens permitidas no CORS, separadas por vírgula |
