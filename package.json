@@ -31,6 +31,7 @@
     "docker:build:api": "docker build -f docker/api.Dockerfile -t qualitytest-api:latest .",
     "docker:build:worker": "docker build -f docker/worker.Dockerfile -t qualitytest-worker:latest .",
     "docker:build": "npm run docker:build:api && npm run docker:build:worker",
+    "smoke:test": "node scripts/smoke-test.mjs",
     "db:generate": "prisma generate --schema apps/api/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema apps/api/prisma/schema.prisma",
     "db:migrate:deploy": "prisma migrate deploy --schema apps/api/prisma/schema.prisma",

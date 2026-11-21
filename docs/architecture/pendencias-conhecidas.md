@@ -58,7 +58,7 @@ Consolidar, de forma honesta, as **pendências e limitações conhecidas** do QU
 |---|---|---|---|
 | P11 | **Provedores gerenciados não definidos** | PENDENTE DE DEFINIÇÃO | PostgreSQL, Redis e storage S3-compatível: provedores e capacidade a definir. Ver [deploy-infraestrutura.md](deploy-infraestrutura.md) §10. |
 | P12 | **Domínio e HTTPS** | PENDENTE DE DEFINIÇÃO | Domínio oficial e configuração de HTTPS a definir quando fornecido. |
-| P13 | **Registry de imagens Docker** | PENDENTE DE DEFINIÇÃO | O CI valida o build das imagens, mas **não publica** (sem registry/credenciais). |
+| P13 | **Registry de imagens Docker** | RESOLVIDO (padrão GHCR) | Publicação pelo workflow `release.yml` no GHCR via `GITHUB_TOKEN` (sem credenciais externas). Trocar apenas se houver exigência corporativa por outro registro. Ver [deploy-infraestrutura.md](deploy-infraestrutura.md) §6.3. |
 | P14 | **Observabilidade / logs** | PENDENTE DE DEFINIÇÃO | Solução de monitoramento e logs a definir (hoje API e worker registram em `stdout`/`stderr`). |
 
 ---

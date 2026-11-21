@@ -1,6 +1,6 @@
 # Deploy e Infraestrutura
 
-**Versão:** 1.1
+**Versão:** 1.2
 **Data:** 21/11/2026
 **Status:** Preparação implementada — deploy **não executado** (nenhum ambiente de produção provisionado)
 
@@ -41,10 +41,13 @@ O repositório oficial será conectado à Vercel para implantação do frontend 
 | Artefato | Descrição |
 |---|---|
 | `.dockerignore` | Reduz o contexto Docker e evita copiar segredos (`node_modules`, `dist`, `.next`, `docs`, `.env`, etc.) |
-| `docker/api.Dockerfile` | Build multi-stage da API (NestJS `apps/api/dist/main.js`) |
+| `docker/api.Dockerfile` | Build multi-stage da API (NestJS `apps/api/dist/main.js`) + `HEALTHCHECK` em `/api/health` |
 | `docker/worker.Dockerfile` | Build multi-stage do worker (`apps/worker/dist/index.js`) |
-| Scripts npm | `docker:build:api`, `docker:build:worker`, `docker:build` (raiz) |
+| `.env.production.example` | Modelo documentado das variáveis de produção (sem segredos reais) |
+| `scripts/smoke-test.mjs` | Smoke test pós-deploy de `/api/health` (usado via `npm run smoke:test`) |
+| Scripts npm | `docker:build:api`, `docker:build:worker`, `docker:build`, `smoke:test` (raiz) |
 | Job de CI | `docker-images` em [.github/workflows/ci.yml](../../.github/workflows/ci.yml) — valida o build das imagens a cada push/PR |
+| Workflow de release | [.github/workflows/release.yml](../../.github/workflows/release.yml) — publica as imagens no GHCR e aplica migrações sob aprovação (§6.3) |
 
 **Build e execução local de validação:**
 
@@ -177,7 +180,20 @@ Implementado em [.github/workflows/ci.yml](../../.github/workflows/ci.yml):
 | `quality` | Build | Build de shared/api/worker/web/extension | Sim |
 | `docker-images` | Imagens | `docker build` da API e do worker (sem publicar) | Sim (depende de `quality`) |
 
-> O job `docker-images` roda apenas após `quality` passar e **não publica** imagens (não há registry/credenciais definidos — **PENDENTE DE DEFINIÇÃO**). Publicação em registry fica para quando o provedor for escolhido.
+> O job `docker-images` roda apenas após `quality` passar e **não publica** imagens — a publicação é feita pelo workflow de release (§6.3), que usa o `GITHUB_TOKEN` e não exige credenciais externas.
+
+### 6.3 Publicação de imagens e migrações (release)
+
+Implementado em [.github/workflows/release.yml](../../.github/workflows/release.yml), executado **manualmente** (Actions → Release → Run workflow) ou por push de tag `v*`:
+
+| Job | Conteúdo | Gate |
+|---|---|---|
+| `publish-images` | `docker build` + `push` das imagens da API e do worker no **GHCR** (`ghcr.io/<owner>/qualitytest`, repositório e pacotes do próprio GitHub) com a tag informada e uma tag imutável `sha-<40>` | `GITHUB_TOKEN` (`packages: write`) |
+| `migrate` | `npm run db:migrate:deploy` contra o banco alvo | Só roda com `run_migrations=true` e no environment **`production`** — configure **revisores obrigatórios** nesse environment para tornar a aprovação manual efetiva |
+
+Ordem recomendada em uma release: (1) CI verde; (2) `publish-images`; (3) `migrate` (se houver migração); (4) publicar a nova versão nos serviços; (5) `npm run smoke:test`.
+
+> O GHCR é o registro padrão por ser do próprio provedor do repositório e não exigir credenciais adicionais. Se houver exigência corporativa por outro registro, o workflow deve ser ajustado (**PENDENTE DE DEFINIÇÃO**).
 
 ---
 
@@ -186,7 +202,7 @@ Implementado em [.github/workflows/ci.yml](../../.github/workflows/ci.yml):
 - Segredos via variáveis de ambiente e cofre de secrets da plataforma.
 - **Nunca** em código, logs ou no frontend.
 - Ambientes com segredos próprios (dev/preview/prod).
-- `.env.example` documenta o conjunto completo (valores de **desenvolvimento**).
+- `.env.example` documenta o conjunto completo com valores de **desenvolvimento**; `.env.production.example` é o **modelo de produção** (todos os campos a definir, sem segredos reais).
 
 ### 7.1 Variáveis de produção (referência)
 
@@ -275,6 +291,20 @@ npm run db:migrate:deploy
 - **Validação pós-rollback:** `/api/health` respondendo e verificação das tabelas-chave.
 - Registrar incidente, causa e horários.
 
+### 8.4 Smoke test pós-deploy
+
+Validação objetiva de que a nova versão subiu e que o banco responde:
+
+```bash
+# API_BASE_URL aponta para o ambiente publicado (padrão: http://localhost:3333/api)
+$env:API_BASE_URL = "https://<definir-host-da-api>/api"
+npm run smoke:test
+```
+
+- Consulta `GET /health` (rota pública), com tentativas e intervalo configuráveis (`SMOKE_RETRIES`, `SMOKE_DELAY_MS`).
+- Falha (exit code ≠ 0) se a API não responder ou se `status != "ok"` — adequado para uso em CI/CD e após rollback.
+- A imagem da API também declara um `HEALTHCHECK` sobre a mesma rota.
+
 ---
 
 ## 9. Checklist de deploy
@@ -286,9 +316,10 @@ npm run db:migrate:deploy
 - [ ] Segredos de produção configurados.
 - [ ] Domínio/HTTPS configurados.
 - [ ] Backup realizado.
-- [ ] Plano de rollback documentado (procedimento definido em §8.3).
+- [x] Plano de rollback documentado (procedimento definido em §8.3).
 - [ ] Autorização explícita para produção.
 - [ ] Monitoramento ativo após o deploy.
+- [ ] Smoke test pós-deploy executado com sucesso (§8.4).
 
 ---
 
@@ -299,7 +330,7 @@ npm run db:migrate:deploy
 - Provedor de PostgreSQL gerenciado — **PENDENTE DE DEFINIÇÃO**.
 - Provedor de Redis gerenciado — **PENDENTE DE DEFINIÇÃO**.
 - Provedor de storage S3-compatível — **PENDENTE DE DEFINIÇÃO**.
-- Registry de imagens (publicação das imagens Docker) — **PENDENTE DE DEFINIÇÃO**.
+- Registry de imagens: **GHCR por padrão** (workflow `release.yml`, via `GITHUB_TOKEN`); trocar apenas se houver exigência corporativa por outro registro.
 - Solução de logs/monitoramento — **PENDENTE DE DEFINIÇÃO**.
 - Nomes de branches de feature/correção — **PENDENTE DE DEFINIÇÃO**.
 - Capacidade/plano dos serviços gerenciados — **PENDENTE DE DEFINIÇÃO**.

@@ -1,6 +1,6 @@
 # Plano Incremental de Execução
 
-**Versão:** 1.4
+**Versão:** 1.5
 **Data:** 21/11/2026
 **Status:** Em execução (Etapas 1 a 10 concluídas; Etapa 11 — Deploy em preparação; Etapa 12 — Documentação e Entrega concluída, exceto o PDF consolidado)
 
@@ -171,11 +171,13 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 **Entregáveis:** Preview; configuração de produção; migrações controladas; monitoramento; backup; rollback. **Produção somente após autorização.**
 
 **Resultado parcial:**
-- `docker/api.Dockerfile` e `docker/worker.Dockerfile` (build multi-stage, validados localmente).
+- `docker/api.Dockerfile` e `docker/worker.Dockerfile` (build multi-stage, validados localmente); a API declara `HEALTHCHECK` em `/api/health`.
 - `.dockerignore` da raiz (contexto enxuto, sem segredos).
-- Scripts `docker:build`, `docker:build:api`, `docker:build:worker`.
+- Scripts `docker:build`, `docker:build:api`, `docker:build:worker` e `smoke:test`.
 - Job `docker-images` no CI (valida o build das imagens a cada push/PR; não publica).
-- Runbooks de migração (`prisma migrate deploy`) e de rollback, além de backup/restauração, em [deploy-infraestrutura.md](deploy-infraestrutura.md).
+- Workflow `release.yml` (execução manual / tag `v*`): publica as imagens no **GHCR** (via `GITHUB_TOKEN`, sem credenciais externas) e aplica migrações sob o environment `production` (gate de aprovação).
+- `.env.production.example` (modelo das variáveis de produção, sem segredos) e `scripts/smoke-test.mjs` (validação pós-deploy de `/api/health`).
+- Runbooks de migração (`prisma migrate deploy`), rollback, backup/restauração e smoke test em [deploy-infraestrutura.md](deploy-infraestrutura.md).
 
 **Critérios de aceite:** Preview validado; pipeline de CI/CD bloqueando merges inválidos; produção somente com autorização explícita. **Pendente** de provedores, domínio e credenciais.
 

@@ -47,4 +47,9 @@ COPY --from=build /app/apps/api ./apps/api
 
 EXPOSE 3333
 USER node
+
+# Healthcheck baseado na rota pública /api/health (a mesma usada pelo smoke test).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.API_PORT||'3333')+'/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
 CMD ["node", "apps/api/dist/main.js"]

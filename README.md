@@ -218,13 +218,15 @@ A autenticação é **própria** (não gerenciada). O transporte é via cabeçal
 | `npm run db:migrate` / `db:seed` | Migrações e seed de desenvolvimento |
 | `npm run db:migrate:deploy` | Aplica migrações pendentes (ambiente controlado) |
 | `npm run docker:build` | Build das imagens Docker da API e do worker |
+| `npm run smoke:test` | Smoke test pós-deploy de `/api/health` (`API_BASE_URL`) |
 | `npm run docs:openapi` | Regera `docs/api/openapi.json` (OpenAPI estático) |
 
 ---
 
 ## Variáveis de ambiente
 
-Todas as variáveis estão documentadas em `.env.example`. Destaques:
+Todas as variáveis estão documentadas em `.env.example`. O modelo de produção (sem valores
+reais) está em `.env.production.example`. Destaques:
 
 | Variável | Uso |
 |---|---|
@@ -248,7 +250,14 @@ Todas as variáveis estão documentadas em `.env.example`. Destaques:
 Em seguida, o job `docker-images` valida o build das imagens Docker da API e do worker
 (`docker/api.Dockerfile` e `docker/worker.Dockerfile`), sem publicá-las.
 
-O pipeline não faz deploy e não utiliza secrets.
+`.github/workflows/release.yml` é executado **manualmente** (ou por tag `v*`): publica as
+imagens no GHCR (via `GITHUB_TOKEN`) e, opcionalmente, aplica migrações sob o environment
+`production` — que deve ter revisores obrigatórios configurados. Nenhum deploy de produção
+é executado sem autorização explícita.
+
+Nenhum workflow executa deploy de produção. O `release.yml` usa apenas o `GITHUB_TOKEN`
+(automático) e, quando as migrações são solicitadas, o segredo `DATABASE_URL` do environment
+`production`.
 
 ---
 
