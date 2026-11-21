@@ -9,7 +9,7 @@ import { applyDatabaseUrlFallback, configureApiApp } from './bootstrap';
 import { resolveCorsOrigins } from './common/security/security.middleware';
 
 function resolvePort(): number {
-  // `API_PORT` tem precedência; `PORT` é o padrão usado por PaaS (ex.: Render).
+  // `API_PORT` tem precedência; `PORT` é o padrão usado por PaaS (ex.: Render, Vercel).
   const raw = process.env.API_PORT ?? process.env.PORT ?? '3333';
   const parsed = Number.parseInt(raw, 10);
   return Number.isNaN(parsed) ? 3333 : parsed;
@@ -21,17 +21,15 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   configureApiApp(app);
 
-  // Em runtime serverless (Vercel) o HTTP é provido pela plataforma; `listen`
-  // só é necessário para execução local / containers.
-  if (!process.env.VERCEL) {
-    const port = resolvePort();
-    await app.listen(port);
+  // Em runtime serverless (Vercel) o builder NestJS remove o `listen` e exporta
+  // o app automaticamente; localmente e em containers o listen sobe o servidor.
+  const port = resolvePort();
+  await app.listen(port);
 
-    const logger = new Logger('Bootstrap');
-    logger.log(`API disponível em http://localhost:${port}/${API_PREFIX}`);
-    logger.log(`Swagger disponível em http://localhost:${port}/${API_PREFIX}/docs`);
-    logger.log(`CORS liberado para: ${resolveCorsOrigins().join(', ')}`);
-  }
+  const logger = new Logger('Bootstrap');
+  logger.log(`API disponível em http://localhost:${port}/${API_PREFIX}`);
+  logger.log(`Swagger disponível em http://localhost:${port}/${API_PREFIX}/docs`);
+  logger.log(`CORS liberado para: ${resolveCorsOrigins().join(', ')}`);
 }
 
 bootstrap().catch((error: unknown) => {
