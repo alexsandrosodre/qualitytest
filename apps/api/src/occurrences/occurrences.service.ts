@@ -78,18 +78,28 @@ export interface AttachmentDownloadView {
   expiresInSeconds: number;
 }
 
-/** Tipos MIME aceitos para anexos de ocorrência. */
-const ALLOWED_ATTACHMENT_MIME_TYPES: ReadonlySet<string> = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/jpg',
-  'image/gif',
-  'image/webp',
-  'application/pdf',
-  'text/plain',
-  'application/zip',
-  'application/x-zip-compressed',
+/**
+ * Extensões aceitas por tipo MIME para anexos de ocorrência.
+ * A extensão do arquivo precisa ser coerente com o tipo MIME declarado,
+ * evitando que um tipo permitido seja usado para trafegar outro formato.
+ */
+const ALLOWED_ATTACHMENT_EXTENSIONS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ['image/png', new Set(['png'])],
+  ['image/jpeg', new Set(['jpg', 'jpeg'])],
+  ['image/jpg', new Set(['jpg', 'jpeg'])],
+  ['image/gif', new Set(['gif'])],
+  ['image/webp', new Set(['webp'])],
+  ['application/pdf', new Set(['pdf'])],
+  ['text/plain', new Set(['txt', 'log'])],
+  ['application/zip', new Set(['zip'])],
+  ['application/x-zip-compressed', new Set(['zip'])],
 ]);
+
+/** Extrai a extensão (sem ponto, minúscula) do nome do arquivo, ou `null`. */
+function extractFileExtension(fileName: string): string | null {
+  const match = /\.([a-zA-Z0-9]+)$/.exec(fileName.trim());
+  return match === null ? null : (match[1] ?? '').toLowerCase();
+}
 
 const DEFAULT_MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 const DEFAULT_PRESIGN_TTL_SECONDS = 900;
@@ -835,9 +845,20 @@ export class OccurrencesService {
   }
 
   private assertValidAttachment(dto: CreateOccurrenceAttachmentDto): void {
-    if (!ALLOWED_ATTACHMENT_MIME_TYPES.has(dto.mimeType.toLowerCase())) {
+    const allowedExtensions = ALLOWED_ATTACHMENT_EXTENSIONS.get(dto.mimeType.toLowerCase());
+
+    if (allowedExtensions === undefined) {
       throw new UnprocessableEntityException(
         `Tipo de arquivo não permitido: ${dto.mimeType}.`,
+      );
+    }
+
+    const extension = extractFileExtension(dto.fileName);
+
+    if (extension === null || !allowedExtensions.has(extension)) {
+      throw new UnprocessableEntityException(
+        `A extensão do arquivo "${dto.fileName}" não corresponde ao tipo ${dto.mimeType}. ` +
+          `Extensões aceitas: ${[...allowedExtensions].join(', ')}.`,
       );
     }
 

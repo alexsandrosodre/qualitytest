@@ -1,8 +1,8 @@
 # Plano Incremental de Execução
 
-**Versão:** 1.1
+**Versão:** 1.2
 **Data:** 21/11/2026
-**Status:** Em execução (Etapas 1 a 9 concluídas; próxima: Etapa 10 — Segurança e Qualidade)
+**Status:** Em execução (Etapas 1 a 10 concluídas; próxima: Etapa 11 — Deploy, somente com autorização)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Detalhar as **12 etapas** do plano de execução (seção 19 da especificação mestra), com objetivo, entregáveis e critérios de aceite de cada etapa.
 
-> **Estado atual:** **Etapa 9 — IA OPCIONAL — Concluída** (providers externos previstos no contrato, porém **não conectados**; módulo desativado por padrão em `AI_ENABLED=false`; ver [ia-opcional.md](ia-opcional.md)). Pendências herdadas: credenciais oficiais da WhatsApp Cloud API — canal permanece desativado (seção 11 de [notificacoes-whatsapp.md](notificacoes-whatsapp.md)); domínio oficial da extensão e armazenamento seguro do token (seção 11 de [extensao-chrome.md](extensao-chrome.md)); E2E de navegador da Etapa 6. As Etapas 1 a 9 estão **Concluídas**; a próxima é a **Etapa 10 — Segurança e Qualidade**.
+> **Estado atual:** **Etapa 10 — SEGURANÇA E QUALIDADE — Concluída** (headers de segurança via helmet, força mínima de `JWT_SECRET`, validação de extensão de anexos e revisão completa da seção 14; ver [seguranca-lgpd.md](seguranca-lgpd.md)). Pendências herdadas: credenciais oficiais da WhatsApp Cloud API — canal permanece desativado (seção 11 de [notificacoes-whatsapp.md](notificacoes-whatsapp.md)); domínio oficial da extensão e armazenamento seguro do token (seção 11 de [extensao-chrome.md](extensao-chrome.md)); E2E de navegador da Etapa 6. Pendências não bloqueantes desta etapa: política de retenção/LGPD, teste de restauração (aguarda provedor gerenciado) e atualização de dependências com breaking change. As Etapas 1 a 10 estão **Concluídas**; a próxima é a **Etapa 11 — Deploy** (somente com autorização explícita).
 
 ---
 
@@ -152,13 +152,13 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 10 — SEGURANÇA E QUALIDADE
 
-**Status:** Planejado
+**Status:** Concluída (pendências: política de retenção/LGPD e teste de restauração dependem de definição externa)
 
 **Objetivo:** Revisar e endurecer segurança e qualidade.
 
 **Entregáveis:** Testes completos; revisão de autorização; revisão de upload; revisão de secrets; testes de recuperação; correções.
 
-**Critérios de aceite:** Testes de isolamento e segurança verdes; uploads validados; secrets geridos; restauração testada.
+**Critérios de aceite:** Testes de isolamento e segurança verdes; uploads validados; secrets geridos; restauração testada. **Atendidos** — testes de isolamento/segurança verdes (191 na API); upload com MIME + extensão + tamanho; `JWT_SECRET` com força mínima; headers de segurança (helmet); runbook de backup/restauração documentado (execução pendente do provedor). Detalhes em [seguranca-lgpd.md](seguranca-lgpd.md).
 
 ---
 
@@ -199,7 +199,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 | 7 | Extensão Chrome | Concluída (pendências: domínio oficial e armazenamento do token) |
 | 8 | Notificações | Concluída (pendência: credenciais do WhatsApp — canal desativado) |
 | 9 | IA Opcional | Concluída (pendência: provider externo não conectado) |
-| 10 | Segurança e Qualidade | Planejado |
+| 10 | Segurança e Qualidade | Concluída (pendências: retenção/LGPD e teste de restauração) |
 | 11 | Deploy | Planejado |
 | 12 | Documentação e Entrega | Planejado |
 

@@ -171,6 +171,31 @@ flowchart LR
 
 > Provedor de observabilidade — **PENDENTE DE DEFINIÇÃO**.
 
+### 8.1 Backup e restauração (runbook)
+
+Procedimento previsto para o PostgreSQL (a execução depende do provedor gerenciado — **PENDENTE DE DEFINIÇÃO**).
+
+**Backup lógico (pg_dump):**
+
+```bash
+pg_dump --format=custom --no-owner --file=qualitytest-$(date +%Y%m%d).dump "$DATABASE_URL"
+```
+
+- Frequência: conforme RPO definido pela operação (a definir).
+- Retenção: conforme política de retenção (**PENDENTE DE DEFINIÇÃO**).
+- Armazenamento: cofre/objeto separado do ambiente de produção, com acesso restrito.
+
+**Restauração (teste periódico em ambiente isolado):**
+
+```bash
+createdb qualitytest_restore
+pg_restore --clean --no-owner --dbname=qualitytest_restore qualitytest-YYYYMMDD.dump
+```
+
+**Verificação pós-restauração:** aplicar migrações pendentes (`prisma migrate deploy`) e conferir a integridade de tabelas-chave (`users`, `projects`, `occurrences`, `audit_logs`). Registrar data, responsável e resultado do teste.
+
+> O **teste de restauração** deve ser executado em ambiente isolado (nunca sobrescrevendo produção) e registrado. Status atual: procedimento documentado; execução **PENDENTE** (aguarda o provedor gerenciado).
+
 ---
 
 ## 9. Checklist de deploy (proposto)

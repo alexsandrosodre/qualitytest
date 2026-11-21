@@ -50,6 +50,12 @@ export function requireEnv(key: string): string {
   return value;
 }
 
+/** Comprimento mínimo exigido do segredo de assinatura JWT (caracteres). */
+const MIN_JWT_SECRET_LENGTH = 32;
+
+/** Marcador do valor de exemplo do `.env.example` — proibido em produção. */
+const INSECURE_JWT_SECRET_MARKER = 'dev-only-insecure-secret';
+
 /** Validação aplicada pelo ConfigModule (`validate`). */
 export function validateEnv(config: Record<string, unknown>): Record<string, unknown> {
   const jwtSecret = config['JWT_SECRET'];
@@ -58,6 +64,20 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
     throw new Error(
       'JWT_SECRET é obrigatória e não foi definida. Copie .env.example para .env e ' +
         'informe um segredo forte (em produção: valor aleatório com 32+ bytes).',
+    );
+  }
+
+  if (jwtSecret.trim().length < MIN_JWT_SECRET_LENGTH) {
+    throw new Error(
+      `JWT_SECRET é muito curta (${jwtSecret.trim().length} caracteres). ` +
+        `Use um segredo aleatório com pelo menos ${MIN_JWT_SECRET_LENGTH} caracteres.`,
+    );
+  }
+
+  if (config['NODE_ENV'] === 'production' && jwtSecret.includes(INSECURE_JWT_SECRET_MARKER)) {
+    throw new Error(
+      'JWT_SECRET usa o valor de exemplo público do .env.example. ' +
+        'Defina um segredo forte e exclusivo antes de rodar em produção.',
     );
   }
 

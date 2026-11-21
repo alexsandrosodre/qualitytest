@@ -56,12 +56,14 @@ Toda a documentação aqui descrita é **Planejado / Proposto**. Nada foi implem
 | [architecture/contratos-api.md](architecture/contratos-api.md) | Contratos da API REST | Planejado |
 | [architecture/extensao-chrome.md](architecture/extensao-chrome.md) | Estratégia da extensão Chrome (Manifest V3) | Planejado |
 | [architecture/notificacoes-whatsapp.md](architecture/notificacoes-whatsapp.md) | Serviço desacoplado de notificações e limitações do WhatsApp | Planejado |
+| [architecture/ia-opcional.md](architecture/ia-opcional.md) | Módulo opcional de IA assistiva (desativável) | Implementado |
 
 ### 3.4 Infraestrutura, qualidade e planejamento
 
 | Documento | Descrição | Status |
 |---|---|---|
 | [architecture/deploy-infraestrutura.md](architecture/deploy-infraestrutura.md) | Deploy, ambientes, CI/CD e infraestrutura | Planejado |
+| [architecture/seguranca-lgpd.md](architecture/seguranca-lgpd.md) | Revisão de segurança, headers, secrets, anexos e LGPD | Implementado |
 | [architecture/plano-de-testes.md](architecture/plano-de-testes.md) | Plano de testes e critérios de aceite | Planejado |
 | [architecture/sitemap-e-telas.md](architecture/sitemap-e-telas.md) | Sitemap, navegação, telas e matriz por perfil | Planejado |
 | [architecture/riscos-e-dependencias.md](architecture/riscos-e-dependencias.md) | Riscos, custos e dependências externas | Planejado |

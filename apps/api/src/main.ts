@@ -6,13 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { API_PREFIX, API_VERSION } from '@qualitytest/shared';
 
 import { AppModule } from './app.module';
-
-function resolveCorsOrigins(): string[] {
-  return (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter((origin) => origin.length > 0);
-}
+import { applySecurity, resolveCorsOrigins } from './common/security/security.middleware';
 
 function resolvePort(): number {
   const parsed = Number.parseInt(process.env.API_PORT ?? '3333', 10);
@@ -32,11 +26,7 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  const corsOrigins = resolveCorsOrigins();
-  app.enableCors({
-    origin: corsOrigins,
-    credentials: true,
-  });
+  applySecurity(app);
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('QUALITY TEST API')
@@ -57,7 +47,7 @@ async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
   logger.log(`API disponível em http://localhost:${port}/${API_PREFIX}`);
   logger.log(`Swagger disponível em http://localhost:${port}/${API_PREFIX}/docs`);
-  logger.log(`CORS liberado para: ${corsOrigins.join(', ')}`);
+  logger.log(`CORS liberado para: ${resolveCorsOrigins().join(', ')}`);
 }
 
 bootstrap().catch((error: unknown) => {

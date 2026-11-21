@@ -123,6 +123,15 @@ describe('Anexos de ocorrências (e2e)', () => {
         .expect(422);
     });
 
+    it('rejeita extensão incompatível com o tipo MIME (422)', async () => {
+      const id = await createOccurrence(gestorToken, 'k-att-ext');
+      await request(server)
+        .post(`${BASE}/${id}/attachments`)
+        .set('Authorization', `Bearer ${testerToken}`)
+        .send(attachmentBody({ fileName: 'malicioso.exe', mimeType: 'image/png' }))
+        .expect(422);
+    });
+
     it('rejeita anexo acima do tamanho máximo (422)', async () => {
       const id = await createOccurrence(gestorToken, 'k-att-size');
       await request(server)
