@@ -1,8 +1,8 @@
 # Arquitetura Geral
 
-**Versão:** 1.0
+**Versão:** 1.1
 **Data:** 21/11/2026
-**Status:** Planejado (não implementado)
+**Status:** Implementado (Etapas 1 a 10; Etapa 11 — Deploy em preparação, sem deploy de produção)
 
 ---
 
@@ -18,7 +18,7 @@ O QUALITY TEST é uma plataforma corporativa **multi-projeto** para registro e a
 - **Storage** S3-compatível para screenshots e anexos.
 - **Extensão Chrome** Manifest V3 consumindo a mesma API.
 
-> Todo o conteúdo é **Planejado**. Não há implementação no repositório oficial nesta versão.
+> Conteúdo revisado em 21/11/2026 para refletir a arquitetura **implementada** (Etapas 1 a 10; Etapa 11 — Deploy em preparação). Nenhum ambiente de produção foi provisionado.
 
 ---
 

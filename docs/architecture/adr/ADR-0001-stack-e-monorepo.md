@@ -2,8 +2,8 @@
 
 **Versão:** 1.0
 **Data:** 21/11/2026
-**Status do documento:** Planejado (não implementado)
-**Status do ADR:** Proposto
+**Status do documento:** Implementado
+**Status do ADR:** Aceito
 **Contexto da decisão:** ETAPA 1 — Diagnóstico e Arquitetura
 
 ---

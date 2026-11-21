@@ -1,8 +1,8 @@
 # Plano de Testes
 
-**Versão:** 1.0
+**Versão:** 1.1
 **Data:** 21/11/2026
-**Status:** Planejado (não implementado)
+**Status:** Implementado (estratégia executada; resultados em relatorio-de-testes.md)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Definir a estratégia de testes do QUALITY TEST, os níveis, as ferramentas e a lista **completa** de cenários obrigatórios e critérios de aceite do MVP, fiel à **seção 16** da especificação mestra.
 
-> Conteúdo **Planejado**. Nenhum teste foi executado. Todos os status de teste são "Planejado".
+> Estratégia **executada**. Os testes foram implementados e os resultados consolidados em [relatorio-de-testes.md](relatorio-de-testes.md). Pendência: E2E de navegador (Playwright) e metas de cobertura.
 
 ---
 

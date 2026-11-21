@@ -1,8 +1,8 @@
 # Modelo de Dados
 
-**Versão:** 1.0
+**Versão:** 1.1
 **Data:** 21/11/2026
-**Status:** Planejado (não implementado)
+**Status:** Implementado (Prisma + migrações versionadas)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Documentar o modelo relacional alvo do QUALITY TEST, com diagrama entidade-relacionamento (ER) em Mermaid, descrição de cada entidade e regras de integridade, fiel à **seção 11** da especificação mestra.
 
-> Modelo **Planejado**. A especificação define este modelo como "inicial" e prevê refinamento pelo arquiteto. Nada foi migrado para banco algum.
+> Modelo **implementado** em `apps/api/prisma/schema.prisma`, com migrações versionadas em `apps/api/prisma/migrations/`. Este documento descreve o modelo real; refinamentos futuros devem atualizar schema, migração e este documento.
 
 ---
 

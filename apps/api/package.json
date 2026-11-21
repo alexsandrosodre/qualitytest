@@ -17,6 +17,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
+    "docs:openapi": "ts-node --transpile-only scripts/generate-openapi.ts",
     "seed": "ts-node --transpile-only prisma/seed.ts"
   },
   "prisma": {

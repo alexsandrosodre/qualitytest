@@ -1,8 +1,8 @@
 # Riscos, Custos e Dependências Externas
 
-**Versão:** 1.0
+**Versão:** 1.1
 **Data:** 21/11/2026
-**Status:** Planejado (não implementado)
+**Status:** Revisado (riscos vigentes; dependências externas pendentes de definição)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Registrar os riscos, os custos estimados e as dependências externas do QUALITY TEST, conforme a **seção 21, item 14** ("Riscos, custos e dependências externas").
 
-> Conteúdo **Planejado**. Nenhum valor de custo é inventado: onde não houver dado, registra-se **"a levantar"**.
+> Conteúdo **revisado** em 21/11/2026. Nenhum valor de custo é inventado: onde não houver dado, registra-se **"a levantar"**. O que já foi mitigado está refletido em [pendencias-conhecidas.md](pendencias-conhecidas.md).
 
 ---
 

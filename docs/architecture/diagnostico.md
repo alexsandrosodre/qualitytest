@@ -2,7 +2,7 @@
 
 **Versão:** 1.0
 **Data:** 21/11/2026
-**Status:** Planejado (não implementado)
+**Status:** Registro histórico (estado inicial na ETAPA 1)
 
 ---
 
@@ -11,6 +11,8 @@
 Registrar o estado real e verificado do repositório e do ambiente de desenvolvimento do QUALITY TEST, conforme exigido pela **ETAPA 1 — DIAGNÓSTICO E ARQUITETURA** do plano de execução (seção 19 da especificação mestra) e pela seção 21 ("Prompt de Primeira Execução").
 
 Este diagnóstico é a base factual para todas as decisões arquiteturais dos demais documentos. Nenhum item abaixo foi obtido por suposição: reflete apenas o estado verificado.
+
+> **Registro histórico.** Este documento reflete o repositório **antes** da implementação (ETAPA 1) e é mantido como evidência. O estado atual está em [plano-incremental.md](plano-incremental.md) e no [README.md](../../README.md).
 
 ---
 

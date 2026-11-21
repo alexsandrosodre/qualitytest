@@ -1,8 +1,8 @@
 # Permissões e Isolamento por Projeto
 
-**Versão:** 1.0
+**Versão:** 1.1
 **Data:** 21/11/2026
-**Status:** Planejado (não implementado)
+**Status:** Implementado
 
 ---
 
@@ -10,7 +10,7 @@
 
 Definir o modelo de autorização do QUALITY TEST: **RBAC combinado com permissões por projeto**, a matriz de permissões por recurso × papel e a **estratégia de isolamento por projeto**. Fiel às seções 2.2, 2.3 e 3.2 da especificação mestra.
 
-> Conteúdo **Planejado**. Representa o modelo alvo.
+> Conteúdo **implementado**: os guards (`JwtAuthGuard`, `GlobalRolesGuard`, `ProjectAccessGuard`) e o `ProjectAccessService` são a fonte única de autorização. Cobertura de testes de isolamento em [relatorio-de-testes.md](relatorio-de-testes.md).
 
 ---
 

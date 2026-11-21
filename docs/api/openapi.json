@@ -1,0 +1,2747 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Status atual do serviço."
+          }
+        },
+        "summary": "Status da API e checagem simples de dependências",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens emitidos e dados básicos do usuário."
+          }
+        },
+        "summary": "Autentica e emite access token + refresh token.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Novos tokens emitidos."
+          }
+        },
+        "summary": "Rotaciona o refresh token e emite novos tokens.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sessão revogada."
+          }
+        },
+        "summary": "Revoga o refresh token informado.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "AuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Usuário autenticado e projetos com papel."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Usuário autenticado e seus vínculos ativos por projeto.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "operationId": "AuthController_forgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mensagem genérica."
+          }
+        },
+        "summary": "Solicita redefinição de senha (nunca revela se o e-mail existe).",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Senha redefinida e sessões revogadas."
+          }
+        },
+        "summary": "Redefine a senha via token de uso único.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "operationId": "AuthController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Senha alterada."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Altera a senha do usuário autenticado e revoga as demais sessões.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/users": {
+      "post": {
+        "operationId": "UsersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuário criado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cria um usuário (somente ADMINISTRADOR).",
+        "tags": [
+          "users"
+        ]
+      },
+      "get": {
+        "operationId": "UsersController_findAll",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de usuários."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista usuários com paginação (somente ADMINISTRADOR).",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "operationId": "UsersController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados do usuário."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consulta um usuário (o próprio ou ADMINISTRADOR).",
+        "tags": [
+          "users"
+        ]
+      },
+      "patch": {
+        "operationId": "UsersController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Usuário atualizado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Atualiza nome/preferências; e-mail apenas por ADMINISTRADOR.",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/{id}/status": {
+      "patch": {
+        "operationId": "UsersController_setStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status atualizado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ativa/desativa um usuário (somente ADMINISTRADOR).",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/projects": {
+      "post": {
+        "operationId": "ProjectsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Projeto criado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cria um projeto (somente ADMINISTRADOR).",
+        "tags": [
+          "projects"
+        ]
+      },
+      "get": {
+        "operationId": "ProjectsController_findAll",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ATIVO",
+                "INATIVO"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Busca por nome ou código.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de projetos."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista projetos visíveis (ADMINISTRADOR vê todos; demais apenas vínculos ativos).",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/suggest": {
+      "get": {
+        "operationId": "ProjectsController_suggest",
+        "parameters": [
+          {
+            "name": "url",
+            "required": true,
+            "in": "query",
+            "description": "URL da página em teste (usada apenas para correspondência de domínio).",
+            "schema": {
+              "example": "https://homolog.exemplo.invalid/pedidos/123",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sugestões de projeto (possivelmente ambíguas)."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sugere projetos por domínio/URL (sugestão sempre confirmável, seção 6.2).",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{projectId}": {
+      "get": {
+        "operationId": "ProjectsController_findOne",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados do projeto."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detalhe do projeto (membro ativo ou ADMINISTRADOR).",
+        "tags": [
+          "projects"
+        ]
+      },
+      "patch": {
+        "operationId": "ProjectsController_update",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Projeto atualizado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Edita o projeto (ADMINISTRADOR ou GESTOR do projeto).",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{projectId}/status": {
+      "patch": {
+        "operationId": "ProjectsController_setStatus",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status do projeto atualizado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ativa/desativa o projeto (somente ADMINISTRADOR).",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{projectId}/members": {
+      "post": {
+        "operationId": "ProjectMembersController_add",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddProjectMemberDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Vínculo criado ou reativado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Adiciona/reativa um vínculo (ADMINISTRADOR ou GESTOR do projeto).",
+        "tags": [
+          "project-members"
+        ]
+      },
+      "get": {
+        "operationId": "ProjectMembersController_list",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de membros do projeto."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista membros do projeto (membro ativo ou ADMINISTRADOR).",
+        "tags": [
+          "project-members"
+        ]
+      }
+    },
+    "/api/projects/{projectId}/members/{userId}": {
+      "patch": {
+        "operationId": "ProjectMembersController_updateRole",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectMemberDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Vínculo atualizado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Altera o papel do usuário no projeto (ADMINISTRADOR ou GESTOR).",
+        "tags": [
+          "project-members"
+        ]
+      },
+      "delete": {
+        "operationId": "ProjectMembersController_remove",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vínculo desativado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Desativa o vínculo (ADMINISTRADOR ou GESTOR do projeto).",
+        "tags": [
+          "project-members"
+        ]
+      }
+    },
+    "/api/projects/{projectId}/environments": {
+      "post": {
+        "operationId": "ProjectEnvironmentsController_create",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectEnvironmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ambiente criado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cria um ambiente (ADMINISTRADOR ou GESTOR do projeto).",
+        "tags": [
+          "project-environments"
+        ]
+      },
+      "get": {
+        "operationId": "ProjectEnvironmentsController_list",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de ambientes."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista ambientes do projeto (membro ativo ou ADMINISTRADOR).",
+        "tags": [
+          "project-environments"
+        ]
+      }
+    },
+    "/api/projects/{projectId}/environments/{environmentId}": {
+      "get": {
+        "operationId": "ProjectEnvironmentsController_findOne",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "environmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados do ambiente."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detalhe do ambiente (membro ativo ou ADMINISTRADOR).",
+        "tags": [
+          "project-environments"
+        ]
+      },
+      "patch": {
+        "operationId": "ProjectEnvironmentsController_update",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "environmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectEnvironmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ambiente atualizado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Edita o ambiente (ADMINISTRADOR ou GESTOR do projeto).",
+        "tags": [
+          "project-environments"
+        ]
+      },
+      "delete": {
+        "operationId": "ProjectEnvironmentsController_deactivate",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "environmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ambiente desativado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Desativa o ambiente (ADMINISTRADOR ou GESTOR do projeto).",
+        "tags": [
+          "project-environments"
+        ]
+      }
+    },
+    "/api/projects/{projectId}/domains": {
+      "post": {
+        "operationId": "ProjectDomainsController_create",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectDomainMappingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Mapeamento criado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cria um mapeamento de domínio (ADMINISTRADOR ou GESTOR do projeto).",
+        "tags": [
+          "project-domains"
+        ]
+      },
+      "get": {
+        "operationId": "ProjectDomainsController_list",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de mapeamentos."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista mapeamentos de domínio (membro ativo ou ADMINISTRADOR).",
+        "tags": [
+          "project-domains"
+        ]
+      }
+    },
+    "/api/projects/{projectId}/domains/{mappingId}": {
+      "patch": {
+        "operationId": "ProjectDomainsController_update",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mappingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectDomainMappingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mapeamento atualizado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Edita o mapeamento (ADMINISTRADOR ou GESTOR do projeto).",
+        "tags": [
+          "project-domains"
+        ]
+      },
+      "delete": {
+        "operationId": "ProjectDomainsController_remove",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mappingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mapeamento removido."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove o mapeamento (ADMINISTRADOR ou GESTOR do projeto).",
+        "tags": [
+          "project-domains"
+        ]
+      }
+    },
+    "/api/occurrences": {
+      "post": {
+        "operationId": "OccurrencesController_create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOccurrenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reenvio idempotente: devolve a ocorrência já criada."
+          },
+          "201": {
+            "description": "Ocorrência criada."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cria uma ocorrência (autor atribuído pelo servidor).",
+        "tags": [
+          "occurrences"
+        ]
+      },
+      "get": {
+        "operationId": "OccurrencesController_list",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "query",
+            "description": "Projeto-alvo (escopo obrigatório e autorizado).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "environmentId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ERRO_FUNCIONAL",
+                "ERRO_VISUAL",
+                "ERRO_INTEGRACAO",
+                "ERRO_VALIDACAO",
+                "DESEMPENHO",
+                "SEGURANCA",
+                "ACESSIBILIDADE",
+                "COMPATIBILIDADE",
+                "OUTROS"
+              ]
+            }
+          },
+          {
+            "name": "priority",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CRITICA",
+                "ALTA",
+                "MEDIA",
+                "BAIXA"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ABERTO",
+                "EM_ANALISE",
+                "EM_DESENVOLVIMENTO",
+                "AGUARDANDO_HOMOLOGACAO",
+                "REPROVADO_HOMOLOGACAO",
+                "CONCLUIDO",
+                "CANCELADO"
+              ]
+            }
+          },
+          {
+            "name": "assigneeUserId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reporterUserId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Data inicial (ISO 8601).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Data final (ISO 8601).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Busca por código público, título ou descrição.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Ordenação (ex.: createdAt:desc, updatedAt:asc).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista paginada de ocorrências."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista ocorrências do projeto autorizado (filtros + paginação).",
+        "tags": [
+          "occurrences"
+        ]
+      }
+    },
+    "/api/occurrences/{occurrenceId}": {
+      "get": {
+        "operationId": "OccurrencesController_findOne",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dados detalhados da ocorrência."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detalhe da ocorrência (membro ativo do projeto).",
+        "tags": [
+          "occurrences"
+        ]
+      },
+      "patch": {
+        "operationId": "OccurrencesController_update",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOccurrenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ocorrência atualizada."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Edita campos permitidos da ocorrência.",
+        "tags": [
+          "occurrences"
+        ]
+      }
+    },
+    "/api/occurrences/{occurrenceId}/assignee": {
+      "patch": {
+        "operationId": "OccurrencesController_assign",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignOccurrenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Responsável atualizado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Atribui/reatribui o responsável (GESTOR/ADMINISTRADOR).",
+        "tags": [
+          "occurrences"
+        ]
+      }
+    },
+    "/api/occurrences/{occurrenceId}/status": {
+      "patch": {
+        "operationId": "OccurrencesController_changeStatus",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeOccurrenceStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status atualizado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Altera o status respeitando o fluxo de transições permitidas.",
+        "tags": [
+          "occurrences"
+        ]
+      }
+    },
+    "/api/occurrences/{occurrenceId}/history": {
+      "get": {
+        "operationId": "OccurrencesController_history",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Histórico da ocorrência."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Histórico cronológico de alterações da ocorrência.",
+        "tags": [
+          "occurrences"
+        ]
+      }
+    },
+    "/api/occurrences/{occurrenceId}/comments": {
+      "get": {
+        "operationId": "OccurrencesController_listComments",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comentários da ocorrência."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista comentários da ocorrência.",
+        "tags": [
+          "occurrences"
+        ]
+      },
+      "post": {
+        "operationId": "OccurrencesController_addComment",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOccurrenceCommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Comentário adicionado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Adiciona comentário à ocorrência.",
+        "tags": [
+          "occurrences"
+        ]
+      }
+    },
+    "/api/occurrences/{occurrenceId}/comments/{commentId}": {
+      "patch": {
+        "operationId": "OccurrencesController_updateComment",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOccurrenceCommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Comentário atualizado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Edita comentário (autor, GESTOR ou ADMINISTRADOR).",
+        "tags": [
+          "occurrences"
+        ]
+      },
+      "delete": {
+        "operationId": "OccurrencesController_deleteComment",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Comentário removido."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove comentário (autor, GESTOR ou ADMINISTRADOR).",
+        "tags": [
+          "occurrences"
+        ]
+      }
+    },
+    "/api/occurrences/{occurrenceId}/attachments": {
+      "get": {
+        "operationId": "OccurrencesController_listAttachments",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Anexos da ocorrência."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista anexos da ocorrência.",
+        "tags": [
+          "occurrences"
+        ]
+      },
+      "post": {
+        "operationId": "OccurrencesController_createAttachment",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOccurrenceAttachmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Anexo registrado e URL de upload gerada."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Solicita upload de anexo (gera URL assinada com expiração).",
+        "tags": [
+          "occurrences"
+        ]
+      }
+    },
+    "/api/occurrences/{occurrenceId}/attachments/{attachmentId}/url": {
+      "get": {
+        "operationId": "OccurrencesController_downloadUrl",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "URL de download gerada."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Gera URL assinada de download do anexo.",
+        "tags": [
+          "occurrences"
+        ]
+      }
+    },
+    "/api/occurrences/{occurrenceId}/attachments/{attachmentId}": {
+      "delete": {
+        "operationId": "OccurrencesController_deleteAttachment",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Anexo removido."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove anexo (autor, GESTOR ou ADMINISTRADOR).",
+        "tags": [
+          "occurrences"
+        ]
+      }
+    },
+    "/api/projects/{projectId}/notifications/destinations": {
+      "get": {
+        "operationId": "NotificationsController_listDestinations",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Destinos do projeto."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista destinos de notificação (membro ativo ou ADMINISTRADOR).",
+        "tags": [
+          "notifications"
+        ]
+      },
+      "post": {
+        "operationId": "NotificationsController_createDestination",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNotificationDestinationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Destino criado (inicia desabilitado por padrão)."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cria destino de notificação (ADMINISTRADOR ou GESTOR do projeto).",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/projects/{projectId}/notifications/destinations/{destinationId}": {
+      "patch": {
+        "operationId": "NotificationsController_updateDestination",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "destinationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationDestinationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Destino atualizado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Edita/habilita destino (ADMINISTRADOR ou GESTOR do projeto).",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/projects/{projectId}/notifications/rules": {
+      "get": {
+        "operationId": "NotificationsController_listRules",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Regras do projeto."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista regras de notificação (membro ativo ou ADMINISTRADOR).",
+        "tags": [
+          "notifications"
+        ]
+      },
+      "post": {
+        "operationId": "NotificationsController_createRule",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNotificationRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Regra criada."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cria regra de notificação (ADMINISTRADOR ou GESTOR do projeto).",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/projects/{projectId}/notifications/deliveries": {
+      "get": {
+        "operationId": "NotificationsController_listDeliveries",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDENTE",
+                "ENVIADO",
+                "FALHA",
+                "DESCARTADO"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entregas paginadas."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Histórico de entregas de notificação (membro ativo ou ADMINISTRADOR).",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/notifications/deliveries/{deliveryId}/reprocess": {
+      "post": {
+        "operationId": "NotificationsAdminController_reprocessDelivery",
+        "parameters": [
+          {
+            "name": "deliveryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entrega reenfileirada para reprocessamento."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reprocessa uma entrega de notificação (somente ADMINISTRADOR).",
+        "tags": [
+          "notifications-admin"
+        ]
+      }
+    },
+    "/api/occurrences/{occurrenceId}/ai-analyses": {
+      "get": {
+        "operationId": "AiAnalysesController_list",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Análises registradas (mais recentes primeiro)."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lista as sugestões de IA da ocorrência e o estado do módulo (membro ativo).",
+        "tags": [
+          "ai"
+        ]
+      },
+      "post": {
+        "operationId": "AiAnalysesController_generate",
+        "parameters": [
+          {
+            "name": "occurrenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Análise gerada e registrada."
+          },
+          "503": {
+            "description": "Módulo de IA desativado (AI_ENABLED=false)."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Gera sugestões de IA para a ocorrência (assistivas; aplicar exige confirmação humana).",
+        "tags": [
+          "ai"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "QUALITY TEST API",
+    "description": "API REST da plataforma corporativa QUALITY TEST. Toda operação dependente de projeto valida o vínculo (ProjectMember) do usuário autenticado.",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "usuario@exemplo.invalid"
+          },
+          "password": {
+            "type": "string",
+            "example": "********"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token opaco recebido no login/refresh."
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "usuario@exemplo.invalid"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Token de redefinição de uso único."
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "Nova senha (mínimo de 8 caracteres)."
+          }
+        },
+        "required": [
+          "token",
+          "newPassword"
+        ]
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "description": "Senha atual."
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "Nova senha (mínimo de 8 caracteres)."
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token da sessão atual. Quando informado, preserva esta sessão e revoga apenas as demais."
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Nome de Exemplo"
+          },
+          "email": {
+            "type": "string",
+            "example": "testador@exemplo.invalid"
+          },
+          "password": {
+            "type": "string",
+            "description": "Senha inicial (mínimo de 8 caracteres)."
+          },
+          "globalRole": {
+            "type": "string",
+            "enum": [
+              "ADMINISTRADOR"
+            ],
+            "description": "Perfil global opcional."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ATIVO",
+              "INATIVO"
+            ],
+            "default": "ATIVO"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "password"
+        ]
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Nome de Exemplo"
+          },
+          "email": {
+            "type": "string",
+            "example": "testador@exemplo.invalid",
+            "description": "Somente administradores podem alterar o e-mail."
+          }
+        }
+      },
+      "UpdateUserStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ATIVO",
+              "INATIVO"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "CreateProjectDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Intranet Maricá"
+          },
+          "code": {
+            "type": "string",
+            "example": "INTRANET-MARICA",
+            "description": "Código/slug único do projeto."
+          },
+          "description": {
+            "type": "string",
+            "example": "Sistema de exemplo."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ATIVO",
+              "INATIVO"
+            ],
+            "default": "ATIVO"
+          }
+        },
+        "required": [
+          "name",
+          "code"
+        ]
+      },
+      "UpdateProjectDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Intranet Maricá"
+          },
+          "code": {
+            "type": "string",
+            "example": "INTRANET-MARICA"
+          },
+          "description": {
+            "type": "string",
+            "example": "Sistema de exemplo."
+          }
+        }
+      },
+      "UpdateProjectStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ATIVO",
+              "INATIVO"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "AddProjectMemberDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "Identificador do usuário a vincular."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "GESTOR",
+              "TESTADOR",
+              "DESENVOLVEDOR"
+            ]
+          }
+        },
+        "required": [
+          "userId",
+          "role"
+        ]
+      },
+      "UpdateProjectMemberDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "GESTOR",
+              "TESTADOR",
+              "DESENVOLVEDOR"
+            ]
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "CreateProjectEnvironmentDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Homologação"
+          },
+          "baseUrl": {
+            "type": "string",
+            "example": "https://homolog.exemplo.invalid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "DEVELOPMENT",
+              "TESTING",
+              "STAGING",
+              "PRODUCTION"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ATIVO",
+              "INATIVO"
+            ],
+            "default": "ATIVO"
+          }
+        },
+        "required": [
+          "name",
+          "baseUrl",
+          "type"
+        ]
+      },
+      "UpdateProjectEnvironmentDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Homologação"
+          },
+          "baseUrl": {
+            "type": "string",
+            "example": "https://homolog.exemplo.invalid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "DEVELOPMENT",
+              "TESTING",
+              "STAGING",
+              "PRODUCTION"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ATIVO",
+              "INATIVO"
+            ]
+          }
+        }
+      },
+      "CreateProjectDomainMappingDto": {
+        "type": "object",
+        "properties": {
+          "domainPattern": {
+            "type": "string",
+            "example": "homolog.exemplo.invalid",
+            "description": "Domínio ou padrão de URL."
+          },
+          "environmentId": {
+            "type": "string",
+            "example": "env_0001",
+            "description": "Ambiente do MESMO projeto ao qual o domínio pertence."
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "domainPattern",
+          "environmentId"
+        ]
+      },
+      "UpdateProjectDomainMappingDto": {
+        "type": "object",
+        "properties": {
+          "domainPattern": {
+            "type": "string",
+            "example": "homolog.exemplo.invalid"
+          },
+          "environmentId": {
+            "type": "string",
+            "example": "env_0001"
+          },
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "CreateOccurrenceDto": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "description": "Projeto-alvo (validado contra o vínculo do usuário)."
+          },
+          "environmentId": {
+            "type": "string",
+            "description": "Ambiente do projeto (opcional)."
+          },
+          "title": {
+            "type": "string",
+            "example": "Componente desalinhado na página de cadastro"
+          },
+          "description": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string",
+            "enum": [
+              "ERRO_FUNCIONAL",
+              "ERRO_VISUAL",
+              "ERRO_INTEGRACAO",
+              "ERRO_VALIDACAO",
+              "DESEMPENHO",
+              "SEGURANCA",
+              "ACESSIBILIDADE",
+              "COMPATIBILIDADE",
+              "OUTROS"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "CRITICA",
+              "ALTA",
+              "MEDIA",
+              "BAIXA"
+            ]
+          },
+          "pageUrl": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "browserInfo": {
+            "type": "string"
+          },
+          "operatingSystemInfo": {
+            "type": "string"
+          },
+          "viewportInfo": {
+            "type": "string"
+          },
+          "attachmentIds": {
+            "description": "Identificadores de anexos. A vinculação efetiva ocorre via endpoint de anexos.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "projectId",
+          "title",
+          "categoryId",
+          "priority"
+        ]
+      },
+      "UpdateOccurrenceDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string",
+            "enum": [
+              "ERRO_FUNCIONAL",
+              "ERRO_VISUAL",
+              "ERRO_INTEGRACAO",
+              "ERRO_VALIDACAO",
+              "DESEMPENHO",
+              "SEGURANCA",
+              "ACESSIBILIDADE",
+              "COMPATIBILIDADE",
+              "OUTROS"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "CRITICA",
+              "ALTA",
+              "MEDIA",
+              "BAIXA"
+            ]
+          },
+          "environmentId": {
+            "type": "string"
+          },
+          "pageUrl": {
+            "type": "string"
+          },
+          "pageTitle": {
+            "type": "string"
+          },
+          "browserInfo": {
+            "type": "string"
+          },
+          "operatingSystemInfo": {
+            "type": "string"
+          },
+          "viewportInfo": {
+            "type": "string"
+          }
+        }
+      },
+      "AssignOccurrenceDto": {
+        "type": "object",
+        "properties": {
+          "assigneeUserId": {
+            "type": "string",
+            "description": "Usuário responsável (deve ser membro ATIVO do mesmo projeto)."
+          }
+        },
+        "required": [
+          "assigneeUserId"
+        ]
+      },
+      "ChangeOccurrenceStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ABERTO",
+              "EM_ANALISE",
+              "EM_DESENVOLVIMENTO",
+              "AGUARDANDO_HOMOLOGACAO",
+              "REPROVADO_HOMOLOGACAO",
+              "CONCLUIDO",
+              "CANCELADO"
+            ]
+          },
+          "justification": {
+            "type": "string",
+            "description": "Obrigatória em transições de reprovação/cancelamento."
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "CreateOccurrenceCommentDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "UpdateOccurrenceCommentDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "maxLength": 5000
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "CreateOccurrenceAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "example": "screenshot.png"
+          },
+          "mimeType": {
+            "type": "string",
+            "example": "image/png"
+          },
+          "size": {
+            "type": "number",
+            "example": 204800,
+            "description": "Tamanho em bytes."
+          }
+        },
+        "required": [
+          "fileName",
+          "mimeType",
+          "size"
+        ]
+      },
+      "CreateNotificationDestinationDto": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "WHATSAPP",
+              "EMAIL",
+              "TEAMS"
+            ]
+          },
+          "destinationConfig": {
+            "type": "object",
+            "example": {
+              "recipientRef": "<referencia-destinatario>",
+              "template": "occurrence_created"
+            },
+            "description": "Configuração do destino (sem segredos)."
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Destinos permanecem desabilitados até serem habilitados explicitamente."
+          }
+        },
+        "required": [
+          "channel",
+          "destinationConfig"
+        ]
+      },
+      "UpdateNotificationDestinationDto": {
+        "type": "object",
+        "properties": {
+          "destinationConfig": {
+            "type": "object",
+            "description": "Nova configuração (sem segredos)."
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Habilita/desabilita o envio pelo destino."
+          }
+        }
+      },
+      "NotificationRuleFiltersDto": {
+        "type": "object",
+        "properties": {
+          "priorities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "CRITICA",
+                "ALTA",
+                "MEDIA",
+                "BAIXA"
+              ]
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ERRO_FUNCIONAL",
+                "ERRO_VISUAL",
+                "ERRO_INTEGRACAO",
+                "ERRO_VALIDACAO",
+                "DESEMPENHO",
+                "SEGURANCA",
+                "ACESSIBILIDADE",
+                "COMPATIBILIDADE",
+                "OUTROS"
+              ]
+            }
+          }
+        }
+      },
+      "CreateNotificationRuleDto": {
+        "type": "object",
+        "properties": {
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "OCCURRENCE_CREATED",
+              "OCCURRENCE_UPDATED",
+              "OCCURRENCE_STATUS_CHANGED"
+            ]
+          },
+          "destinationId": {
+            "type": "string",
+            "description": "Destino do MESMO projeto que dispara a regra."
+          },
+          "filters": {
+            "$ref": "#/components/schemas/NotificationRuleFiltersDto"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "eventType",
+          "destinationId"
+        ]
+      }
+    }
+  }
+}

@@ -1,8 +1,8 @@
 # Plano Incremental de Execução
 
-**Versão:** 1.3
+**Versão:** 1.4
 **Data:** 21/11/2026
-**Status:** Em execução (Etapas 1 a 10 concluídas; Etapa 11 — Deploy em preparação; produção somente com autorização)
+**Status:** Em execução (Etapas 1 a 10 concluídas; Etapa 11 — Deploy em preparação; Etapa 12 — Documentação e Entrega concluída, exceto o PDF consolidado)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Detalhar as **12 etapas** do plano de execução (seção 19 da especificação mestra), com objetivo, entregáveis e critérios de aceite de cada etapa.
 
-> **Estado atual:** **Etapa 10 — SEGURANÇA E QUALIDADE — Concluída** (headers de segurança via helmet, força mínima de `JWT_SECRET`, validação de extensão de anexos e revisão completa da seção 14; ver [seguranca-lgpd.md](seguranca-lgpd.md)). Pendências herdadas: credenciais oficiais da WhatsApp Cloud API — canal permanece desativado (seção 11 de [notificacoes-whatsapp.md](notificacoes-whatsapp.md)); domínio oficial da extensão e armazenamento seguro do token (seção 11 de [extensao-chrome.md](extensao-chrome.md)); E2E de navegador da Etapa 6. Pendências não bloqueantes desta etapa: política de retenção/LGPD, teste de restauração (aguarda provedor gerenciado) e atualização de dependências com breaking change. As Etapas 1 a 10 estão **Concluídas**. A **Etapa 11 — Deploy** está em **preparação**: foram versionados os artefatos de build (Dockerfiles da API e do worker, `.dockerignore`, scripts npm e job `docker-images` no CI) e os runbooks de migração/rollback e de backup/restauração; **nenhum ambiente de produção foi provisionado e nenhum deploy foi executado** — isso depende de autorização explícita e da definição de provedores/domínio/credenciais (ver [deploy-infraestrutura.md](deploy-infraestrutura.md)).
+> **Estado atual:** **Etapa 10 — SEGURANÇA E QUALIDADE — Concluída** (headers de segurança via helmet, força mínima de `JWT_SECRET`, validação de extensão de anexos e revisão completa da seção 14; ver [seguranca-lgpd.md](seguranca-lgpd.md)). Pendências herdadas: credenciais oficiais da WhatsApp Cloud API — canal permanece desativado (seção 11 de [notificacoes-whatsapp.md](notificacoes-whatsapp.md)); domínio oficial da extensão e armazenamento seguro do token (seção 11 de [extensao-chrome.md](extensao-chrome.md)); E2E de navegador da Etapa 6. Pendências não bloqueantes desta etapa: política de retenção/LGPD, teste de restauração (aguarda provedor gerenciado) e atualização de dependências com breaking change. As Etapas 1 a 10 estão **Concluídas**. A **Etapa 11 — Deploy** está em **preparação**: foram versionados os artefatos de build (Dockerfiles da API e do worker, `.dockerignore`, scripts npm e job `docker-images` no CI) e os runbooks de migração/rollback e de backup/restauração; **nenhum ambiente de produção foi provisionado e nenhum deploy foi executado** — isso depende de autorização explícita e da definição de provedores/domínio/credenciais (ver [deploy-infraestrutura.md](deploy-infraestrutura.md)). A **Etapa 12 — Documentação e Entrega** foi executada: manuais por perfil, OpenAPI estático, runbooks, relatório de testes, checklist de aceite e lista de pendências conhecidas; o **PDF consolidado** permanece adiado (pendência P15 em [pendencias-conhecidas.md](pendencias-conhecidas.md)).
 
 ---
 
@@ -183,13 +183,23 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 12 — DOCUMENTAÇÃO E ENTREGA
 
-**Status:** Planejado
+**Status:** Concluída (pendência: PDF consolidado — P15)
 
 **Objetivo:** Consolidar a entrega.
 
 **Entregáveis:** Atualização de todos os diagramas; manuais; OpenAPI; runbooks; PDF consolidado; checklist de aceite; relatório de testes; lista de pendências conhecidas.
 
-**Critérios de aceite:** Documentação reflete o sistema implementado; manuais por perfil entregues; pendências registradas.
+**Resultado:**
+- **Manuais por perfil** (seção 17.4): [manuais/administrador.md](../manuais/administrador.md), [gestor.md](../manuais/gestor.md), [testador.md](../manuais/testador.md), [desenvolvedor.md](../manuais/desenvolvedor.md) e [extensao-chrome.md](../manuais/extensao-chrome.md).
+- **OpenAPI estático:** [api/openapi.json](../api/openapi.json), gerado por `npm run docs:openapi` (offline, com `PrismaService` substituído por stub).
+- **Runbooks:** [runbook-operacao.md](runbook-operacao.md) e [deploy-infraestrutura.md](deploy-infraestrutura.md) §8.
+- **Relatório de testes:** [relatorio-de-testes.md](relatorio-de-testes.md).
+- **Checklist de aceite (seção 22):** [checklist-de-aceite.md](checklist-de-aceite.md).
+- **Pendências conhecidas:** [pendencias-conhecidas.md](pendencias-conhecidas.md) (P1–P18).
+- **Diagramas/documentos revisados** para o estado real (índice em [docs/README.md](../README.md)).
+- **PDF consolidado:** adiado — requer ferramenta adequada sem comprometer a editabilidade dos fontes Markdown.
+
+**Critérios de aceite:** Documentação reflete o sistema implementado; manuais por perfil entregues; pendências registradas. **Atendidos**, exceto o PDF consolidado.
 
 ---
 
@@ -208,7 +218,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 | 9 | IA Opcional | Concluída (pendência: provider externo não conectado) |
 | 10 | Segurança e Qualidade | Concluída (pendências: retenção/LGPD e teste de restauração) |
 | 11 | Deploy | Em preparação (artefatos prontos; deploy não executado) |
-| 12 | Documentação e Entrega | Planejado |
+| 12 | Documentação e Entrega | Concluída (pendência: PDF consolidado) |
 
 ---
 

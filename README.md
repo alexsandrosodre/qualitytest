@@ -3,13 +3,13 @@
 Plataforma corporativa para centralizar o registro e o acompanhamento de testes, defeitos,
 inconsistências e problemas identificados durante a homologação dos sistemas.
 
-> **Estado atual: Etapa 5 (OCORRÊNCIAS) em andamento.**
-> A API já expõe login/logout/refresh, gestão de usuários, vínculos por projeto, o CRUD de
-> projetos/ambientes/domínios e o núcleo de ocorrências (cadastro idempotente, listagem com
-> isolamento por projeto, detalhe, edição, responsável, fluxo de status, comentários, anexos e
-> auditoria). Telas de produto e demais funcionalidades vêm nas próximas etapas.
+> **Estado atual: Etapas 1 a 10 concluídas; Etapa 11 (DEPLOY) em preparação; Etapa 12 (DOCUMENTAÇÃO E ENTREGA) concluída, exceto o PDF consolidado.**
+> A plataforma já inclui API (auth, usuários, projetos, ocorrências, notificações e IA opcional),
+> frontend Next.js, worker BullMQ e extensão Chrome. Os artefatos de deploy (Dockerfiles, CI e
+> runbooks) estão versionados, mas **nenhum deploy de produção foi executado** — isso depende de
+> autorização explícita e da definição de provedores/domínio/credenciais.
 > A especificação mestra está em `Quality_Test_Especificacao_Mestre_GitHub_Vercel_v4.txt` e a
-> documentação de arquitetura em `docs/architecture/`.
+> documentação em `docs/` (índice em `docs/README.md`).
 
 ---
 
@@ -33,12 +33,13 @@ qualitytest/
 ├── apps/
 │   ├── api/        # Backend NestJS + Prisma + Swagger
 │   ├── web/        # Frontend Next.js (App Router)
-│   └── worker/     # Worker BullMQ (esqueleto)
+│   ├── worker/     # Worker BullMQ
+│   └── extension/  # Extensão Chrome (Manifest V3)
 ├── packages/
 │   └── shared/     # Tipos, enums e schemas Zod compartilhados
-├── docker/         # docker-compose de desenvolvimento
+├── docker/         # docker-compose de dev e Dockerfiles de build
 ├── scripts/        # Helpers de desenvolvimento
-├── docs/           # Documentação de arquitetura (não alterar sem necessidade)
+├── docs/           # Documentação (índice em docs/README.md; manuais em docs/manuais/)
 └── .github/workflows/ci.yml
 ```
 
@@ -215,6 +216,9 @@ A autenticação é **própria** (não gerenciada). O transporte é via cabeçal
 | `npm run docker:up:minio` / `docker:up:s3mock` | Storage S3 de dev via profile (MinIO ou mock) |
 | `npm run docker:wait` | Aguarda Postgres/Redis aceitarem conexão |
 | `npm run db:migrate` / `db:seed` | Migrações e seed de desenvolvimento |
+| `npm run db:migrate:deploy` | Aplica migrações pendentes (ambiente controlado) |
+| `npm run docker:build` | Build das imagens Docker da API e do worker |
+| `npm run docs:openapi` | Regera `docs/api/openapi.json` (OpenAPI estático) |
 
 ---
 
@@ -248,7 +252,14 @@ O pipeline não faz deploy e não utiliza secrets.
 
 ---
 
-## Fora do escopo desta etapa
+## Documentação e entrega
 
-Dashboard, extensão do Chrome, notificações WhatsApp e IA são entregues nas etapas seguintes
-(ver seção 19 da especificação e `docs/architecture/plano-incremental.md`).
+- Índice geral: `docs/README.md`.
+- Manuais de uso por perfil: `docs/manuais/` (administrador, gestor, testador, desenvolvedor e extensão Chrome).
+- Runbook de operação: `docs/architecture/runbook-operacao.md`.
+- Relatório de testes: `docs/architecture/relatorio-de-testes.md`.
+- Checklist de aceite (seção 22): `docs/architecture/checklist-de-aceite.md`.
+- Pendências conhecidas: `docs/architecture/pendencias-conhecidas.md`.
+- OpenAPI estático: `docs/api/openapi.json` (regerar com `npm run docs:openapi`).
+
+Pendências não bloqueantes incluem o PDF consolidado e o E2E de navegador (ver `docs/architecture/pendencias-conhecidas.md`).

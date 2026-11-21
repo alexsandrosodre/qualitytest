@@ -1,8 +1,8 @@
 # Contratos da API REST
 
-**Versão:** 1.0
+**Versão:** 1.1
 **Data:** 21/11/2026
-**Status:** Planejado (não implementado)
+**Status:** Implementado (contratos refletem a API das Etapas 1 a 10)
 
 ---
 
@@ -10,20 +10,20 @@
 
 Documentar os contratos principais da API REST do QUALITY TEST, agrupados por recurso. Fiel à seção 12 (REST API + Swagger/OpenAPI) e ao modelo de dados da seção 11.
 
-> **Todos os endpoints são Planejados.** Não existe implementação. Os exemplos de payload são ilustrativos e não representam dados reais.
+> Os contratos refletem a API **implementada**. O documento OpenAPI gerado está em [openapi.json](../api/openapi.json) (gerado por `npm run docs:openapi`); a versão interativa fica em `/api/docs` com a API em execução.
 
 **Convenções gerais:**
 
 | Item | Definição |
 |---|---|
-| Base URL | Definida no deploy — **PENDENTE DE DEFINIÇÃO** (ex.: `/api/v1`) |
+| Base URL | Prefixo global `/api` (`API_PREFIX`); host e domínio — **PENDENTE DE DEFINIÇÃO** |
 | Autenticação | Bearer token (access token) no header `Authorization: Bearer <token>` |
 | Autorização | Toda rota dependente de projeto valida `ProjectMember` no backend |
 | Formato | JSON UTF-8 |
 | Erros | Código HTTP + corpo `{ "statusCode", "error", "message", "timestamp", "path" }` |
-| Paginação | `?page=1&pageSize=20` (padrão a confirmar — PENDENTE DE DEFINIÇÃO) |
+| Paginação | `?page=1&pageSize=20` (`pageSize` limitado a 100) |
 | Idempotência | Header `Idempotency-Key` em operações de criação sensíveis (ocorrências) |
-| Documentação | Swagger/OpenAPI gerado pelo NestJS |
+| Documentação | Swagger/OpenAPI gerado pelo NestJS (`/api/docs`) e exportado em [openapi.json](../api/openapi.json) |
 
 **Códigos de status usados:** 200, 201, 204, 400, 401, 403, 404, 409, 422, 429, 500.
 

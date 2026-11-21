@@ -34,6 +34,7 @@
     "db:generate": "prisma generate --schema apps/api/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema apps/api/prisma/schema.prisma",
     "db:migrate:deploy": "prisma migrate deploy --schema apps/api/prisma/schema.prisma",
+    "docs:openapi": "npm run docs:openapi --workspace @qualitytest/api",
     "db:seed": "npm run seed --workspace @qualitytest/api"
   },
   "devDependencies": {
