@@ -1,9 +1,11 @@
 import 'reflect-metadata';
 
 import { Logger } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import { API_PREFIX } from '@qualitytest/shared';
 
-import { createApiApp } from './bootstrap';
+import { AppModule } from './app.module';
+import { applyDatabaseUrlFallback, configureApiApp } from './bootstrap';
 import { resolveCorsOrigins } from './common/security/security.middleware';
 
 function resolvePort(): number {
@@ -14,15 +16,22 @@ function resolvePort(): number {
 }
 
 async function bootstrap(): Promise<void> {
-  const app = await createApiApp();
+  applyDatabaseUrlFallback();
 
-  const port = resolvePort();
-  await app.listen(port);
+  const app = await NestFactory.create(AppModule);
+  configureApiApp(app);
 
-  const logger = new Logger('Bootstrap');
-  logger.log(`API disponível em http://localhost:${port}/${API_PREFIX}`);
-  logger.log(`Swagger disponível em http://localhost:${port}/${API_PREFIX}/docs`);
-  logger.log(`CORS liberado para: ${resolveCorsOrigins().join(', ')}`);
+  // Em runtime serverless (Vercel) o HTTP é provido pela plataforma; `listen`
+  // só é necessário para execução local / containers.
+  if (!process.env.VERCEL) {
+    const port = resolvePort();
+    await app.listen(port);
+
+    const logger = new Logger('Bootstrap');
+    logger.log(`API disponível em http://localhost:${port}/${API_PREFIX}`);
+    logger.log(`Swagger disponível em http://localhost:${port}/${API_PREFIX}/docs`);
+    logger.log(`CORS liberado para: ${resolveCorsOrigins().join(', ')}`);
+  }
 }
 
 bootstrap().catch((error: unknown) => {

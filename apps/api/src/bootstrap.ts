@@ -1,18 +1,18 @@
 import 'reflect-metadata';
 
 import { ValidationPipe, type INestApplication } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { API_PREFIX, API_VERSION } from '@qualitytest/shared';
 
-import { AppModule } from './app.module';
 import { applyDatabaseUrlFallback } from './common/config/database-url';
 import { applySecurity } from './common/security/security.middleware';
 
-export async function createApiApp(): Promise<INestApplication> {
-  applyDatabaseUrlFallback();
-
-  const app = await NestFactory.create(AppModule);
+/**
+ * Aplica toda a configuração compartilhada da API (prefixo, pipes, segurança,
+ * Swagger). Usado por `main.ts` (entrypoint detectado pelo builder NestJS da
+ * Vercel) e por testes de integração.
+ */
+export function configureApiApp(app: INestApplication): INestApplication {
   app.setGlobalPrefix(API_PREFIX);
   app.useGlobalPipes(
     new ValidationPipe({
@@ -38,6 +38,7 @@ export async function createApiApp(): Promise<INestApplication> {
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup(`${API_PREFIX}/docs`, app, swaggerDocument);
 
-  await app.init();
   return app;
 }
+
+export { applyDatabaseUrlFallback };
