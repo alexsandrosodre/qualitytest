@@ -9,7 +9,9 @@ import { AppModule } from './app.module';
 import { applySecurity, resolveCorsOrigins } from './common/security/security.middleware';
 
 function resolvePort(): number {
-  const parsed = Number.parseInt(process.env.API_PORT ?? '3333', 10);
+  // `API_PORT` tem precedência; `PORT` é o padrão usado por PaaS (ex.: Render).
+  const raw = process.env.API_PORT ?? process.env.PORT ?? '3333';
+  const parsed = Number.parseInt(raw, 10);
   return Number.isNaN(parsed) ? 3333 : parsed;
 }
 

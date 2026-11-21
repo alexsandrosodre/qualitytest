@@ -27,7 +27,7 @@ O repositório oficial será conectado à Vercel para implantação do frontend 
 | Componente | Onde executa | Artefato no repositório |
 |---|---|---|
 | Frontend Next.js | **Vercel** | `apps/web` (configuração na plataforma — ver §7) |
-| Backend NestJS | Serviço/container apropriado | [docker/api.Dockerfile](../../docker/api.Dockerfile) |
+| Backend NestJS | Serviço/container apropriado (ex.: Render, via `render.yaml`) | [docker/api.Dockerfile](../../docker/api.Dockerfile) |
 | Workers BullMQ | Infraestrutura com **processos contínuos** | [docker/worker.Dockerfile](../../docker/worker.Dockerfile) |
 | Redis | **Serviço gerenciado externo** | Consumido via `REDIS_*` |
 | PostgreSQL | **Serviço gerenciado externo** | Consumido via `DATABASE_URL` |
@@ -44,6 +44,7 @@ O repositório oficial será conectado à Vercel para implantação do frontend 
 | `docker/api.Dockerfile` | Build multi-stage da API (NestJS `apps/api/dist/main.js`) + `HEALTHCHECK` em `/api/health` |
 | `docker/worker.Dockerfile` | Build multi-stage do worker (`apps/worker/dist/index.js`) |
 | `.env.production.example` | Modelo documentado das variáveis de produção (sem segredos reais) |
+| `render.yaml` | Blueprint do Render (plano free) para a API: Dockerfile, health check e variáveis (§7.3) |
 | `scripts/smoke-test.mjs` | Smoke test pós-deploy de `/api/health` (usado via `npm run smoke:test`) |
 | Scripts npm | `docker:build:api`, `docker:build:worker`, `docker:build`, `smoke:test` (raiz) |
 | Job de CI | `docker-images` em [.github/workflows/ci.yml](../../.github/workflows/ci.yml) — valida o build das imagens a cada push/PR |
@@ -209,7 +210,7 @@ Ordem recomendada em uma release: (1) CI verde; (2) `publish-images`; (3) `migra
 | Variável | Consumidor | Observação |
 |---|---|---|
 | `NODE_ENV` | API | `production` |
-| `API_PORT` | API | Porta interna do container (padrão `3333`) |
+| `API_PORT` | API | Porta interna do container (`API_PORT`; padrão `3333`; também aceita `PORT`, padrão de PaaS) |
 | `CORS_ORIGIN` | API | Whitelist (CSV) das origens do frontend — **sem wildcard** |
 | `JWT_SECRET` | API | **≥ 32 caracteres**, exclusivo; a API recusa o valor de exemplo em produção (ETAPA 10) |
 | `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | API | TTLs de access/refresh token |
@@ -227,11 +228,30 @@ Ordem recomendada em uma release: (1) CI verde; (2) `publish-images`; (3) `migra
 
 ### 7.2 Configuração do frontend na Vercel
 
-- Importar o repositório e definir o **Root Directory** como `apps/web`.
-- Framework preset **Next.js** (detectado automaticamente).
-- Definir `NEXT_PUBLIC_API_URL` nas variáveis de ambiente do projeto (Preview e Production, com valores distintos).
+Estado real detectado (não presumido):
+
+- Projeto **`web`**, no escopo `alexsandros-projects-319829e8`, vinculado ao repositório `alexsandrosodre/qualitytest`.
+- **Root Directory:** `apps/web` — **Framework preset:** Next.js — **Production Branch:** `main`.
+- Produção: `https://web-alexsandros-projects-319829e8.vercel.app`.
+- `NEXT_PUBLIC_API_URL` ainda **não definida** (depende da URL pública da API): o frontend publica, mas não conversa com a API.
 - O backend (API/worker) **não** roda na Vercel — apenas o frontend.
-- O domínio oficial e a conta/projeto na Vercel são **PENDENTES DE DEFINIÇÃO**.
+
+> `NEXT_PUBLIC_API_URL` é embutida no **build** do Next.js: alterá-la exige um novo deploy.
+
+### 7.3 Stack inicial sem custo (Vercel + Render + Neon)
+
+Alocação escolhida para a primeira publicação, priorizando custo zero:
+
+| Componente | Provedor | Observação |
+|---|---|---|
+| Frontend Next.js | Vercel (Hobby) | projeto `web` (§7.2) |
+| API NestJS | Render (plano free) | [`render.yaml`](../../render.yaml); "dorme" após ~15 min de ociosidade (cold start ~1 min) |
+| PostgreSQL | Neon (free) | `DATABASE_URL` (usar a URL com pooler) |
+| Redis + worker BullMQ | **não usados** | `NOTIFICATIONS_ENABLED=false`; a API usa o publicador no-op |
+| IA | **desativada** | `AI_ENABLED=false` (padrão) |
+| Storage de anexos | **em memória** | sem `S3_*`, uploads não persistem entre reinícios |
+
+Limitações assumidas nesta fase: notificações (fila/WhatsApp) inativas, anexos não persistentes e cold start da API. Migrações e seed são aplicados manualmente, a partir da raiz do monorepo, com `DATABASE_URL` apontando para o Neon (§8.2).
 
 ---
 
@@ -309,6 +329,7 @@ npm run smoke:test
 
 ## 9. Checklist de deploy
 
+- [x] Frontend publicado na Vercel (produção: `web-alexsandros-projects-319829e8.vercel.app`).
 - [ ] Migrações revisadas.
 - [x] Testes de CI verdes (lint, typecheck, testes e build).
 - [x] Build das imagens Docker validado no CI.
@@ -326,10 +347,11 @@ npm run smoke:test
 ## 10. Pontos pendentes de definição
 
 - Domínio oficial e HTTPS — **PENDENTE DE DEFINIÇÃO**.
-- Conta/projeto na Vercel e credenciais — **PENDENTE DE DEFINIÇÃO**.
-- Provedor de PostgreSQL gerenciado — **PENDENTE DE DEFINIÇÃO**.
-- Provedor de Redis gerenciado — **PENDENTE DE DEFINIÇÃO**.
-- Provedor de storage S3-compatível — **PENDENTE DE DEFINIÇÃO**.
+- Conta/projeto na Vercel — **DEFINIDO**: projeto `web` no escopo `alexsandros-projects-319829e8` (§7.2).
+- Provedor de PostgreSQL gerenciado — **DEFINIDO nesta fase**: Neon (free tier, §7.3).
+- Provider de Redis gerenciado — **não usado nesta fase** (`NOTIFICATIONS_ENABLED=false`, §7.3).
+- Provedor de storage S3-compatível — **PENDENTE**; nesta fase o storage cai em memória (§7.3).
+- URL pública da API (Render) — **PENDENTE**: enquanto não existir, `NEXT_PUBLIC_API_URL` fica indefinida.
 - Registry de imagens: **GHCR por padrão** (workflow `release.yml`, via `GITHUB_TOKEN`); trocar apenas se houver exigência corporativa por outro registro.
 - Solução de logs/monitoramento — **PENDENTE DE DEFINIÇÃO**.
 - Nomes de branches de feature/correção — **PENDENTE DE DEFINIÇÃO**.

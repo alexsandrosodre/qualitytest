@@ -53,6 +53,6 @@ USER node
 
 # Healthcheck baseado na rota pública /api/health (a mesma usada pelo smoke test).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+(process.env.API_PORT||'3333')+'/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "const p=process.env.API_PORT||process.env.PORT||'3333';fetch('http://127.0.0.1:'+p+'/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "apps/api/dist/main.js"]

@@ -1,0 +1,51 @@
+# =============================================================================
+# QUALITY TEST - Blueprint do Render (API)
+# =============================================================================
+# Alternativa 100% gratuita para hospedar a API NestJS, usada em conjunto com:
+#   - Frontend: Vercel (apps/web)
+#   - PostgreSQL: Neon (free tier)
+#
+# Como usar:
+#   1. Crie o banco no Neon e copie a connection string (DATABASE_URL).
+#   2. No Render: New > Blueprint > aponte para este repositório.
+#   3. Preencha as variáveis marcadas com `sync: false` (segredos).
+#
+# Observações do plano free do Render:
+#   - O serviço "dorme" após ~15 min sem tráfego; o primeiro acesso seguinte
+#     leva cerca de 1 minuto (cold start).
+#   - Redis e o worker BullMQ NÃO são usados aqui: as notificações ficam
+#     desabilitadas (NOTIFICATIONS_ENABLED=false) e a API usa o publicador no-op.
+#   - Sem S3 configurado, o storage cai em memória (uploads não persistem).
+#   - O deploy automático fica desligado para não publicar sem autorização
+#     (especificação, seção 13.2).
+# =============================================================================
+
+services:
+  - type: web
+    name: qualitytest-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./docker/api.Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: false
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Notificações desabilitadas: a API sobe sem Redis e sem worker.
+      - key: NOTIFICATIONS_ENABLED
+        value: 'false'
+      - key: AI_ENABLED
+        value: 'false'
+      # Segredos: preencher no dashboard do Render (nunca versionar).
+      - key: JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      # Origens permitidas no CORS (URL do frontend na Vercel).
+      - key: CORS_ORIGIN
+        sync: false
+      # URL pública do frontend usada nos links de notificação.
+      - key: WEB_BASE_URL
+        sync: false
