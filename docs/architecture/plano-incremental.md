@@ -1,8 +1,8 @@
 # Plano Incremental de Execução
 
-**Versão:** 1.2
+**Versão:** 1.3
 **Data:** 21/11/2026
-**Status:** Em execução (Etapas 1 a 10 concluídas; próxima: Etapa 11 — Deploy, somente com autorização)
+**Status:** Em execução (Etapas 1 a 10 concluídas; Etapa 11 — Deploy em preparação; produção somente com autorização)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Detalhar as **12 etapas** do plano de execução (seção 19 da especificação mestra), com objetivo, entregáveis e critérios de aceite de cada etapa.
 
-> **Estado atual:** **Etapa 10 — SEGURANÇA E QUALIDADE — Concluída** (headers de segurança via helmet, força mínima de `JWT_SECRET`, validação de extensão de anexos e revisão completa da seção 14; ver [seguranca-lgpd.md](seguranca-lgpd.md)). Pendências herdadas: credenciais oficiais da WhatsApp Cloud API — canal permanece desativado (seção 11 de [notificacoes-whatsapp.md](notificacoes-whatsapp.md)); domínio oficial da extensão e armazenamento seguro do token (seção 11 de [extensao-chrome.md](extensao-chrome.md)); E2E de navegador da Etapa 6. Pendências não bloqueantes desta etapa: política de retenção/LGPD, teste de restauração (aguarda provedor gerenciado) e atualização de dependências com breaking change. As Etapas 1 a 10 estão **Concluídas**; a próxima é a **Etapa 11 — Deploy** (somente com autorização explícita).
+> **Estado atual:** **Etapa 10 — SEGURANÇA E QUALIDADE — Concluída** (headers de segurança via helmet, força mínima de `JWT_SECRET`, validação de extensão de anexos e revisão completa da seção 14; ver [seguranca-lgpd.md](seguranca-lgpd.md)). Pendências herdadas: credenciais oficiais da WhatsApp Cloud API — canal permanece desativado (seção 11 de [notificacoes-whatsapp.md](notificacoes-whatsapp.md)); domínio oficial da extensão e armazenamento seguro do token (seção 11 de [extensao-chrome.md](extensao-chrome.md)); E2E de navegador da Etapa 6. Pendências não bloqueantes desta etapa: política de retenção/LGPD, teste de restauração (aguarda provedor gerenciado) e atualização de dependências com breaking change. As Etapas 1 a 10 estão **Concluídas**. A **Etapa 11 — Deploy** está em **preparação**: foram versionados os artefatos de build (Dockerfiles da API e do worker, `.dockerignore`, scripts npm e job `docker-images` no CI) e os runbooks de migração/rollback e de backup/restauração; **nenhum ambiente de produção foi provisionado e nenhum deploy foi executado** — isso depende de autorização explícita e da definição de provedores/domínio/credenciais (ver [deploy-infraestrutura.md](deploy-infraestrutura.md)).
 
 ---
 
@@ -164,13 +164,20 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 
 ### ETAPA 11 — DEPLOY
 
-**Status:** Planejado
+**Status:** Em preparação (artefatos de build versionados; **deploy de produção não executado**)
 
 **Objetivo:** Preparar e executar implantação controlada.
 
 **Entregáveis:** Preview; configuração de produção; migrações controladas; monitoramento; backup; rollback. **Produção somente após autorização.**
 
-**Critérios de aceite:** Preview validado; pipeline de CI/CD bloqueando merges inválidos; produção somente com autorização explícita.
+**Resultado parcial:**
+- `docker/api.Dockerfile` e `docker/worker.Dockerfile` (build multi-stage, validados localmente).
+- `.dockerignore` da raiz (contexto enxuto, sem segredos).
+- Scripts `docker:build`, `docker:build:api`, `docker:build:worker`.
+- Job `docker-images` no CI (valida o build das imagens a cada push/PR; não publica).
+- Runbooks de migração (`prisma migrate deploy`) e de rollback, além de backup/restauração, em [deploy-infraestrutura.md](deploy-infraestrutura.md).
+
+**Critérios de aceite:** Preview validado; pipeline de CI/CD bloqueando merges inválidos; produção somente com autorização explícita. **Pendente** de provedores, domínio e credenciais.
 
 ---
 
@@ -200,7 +207,7 @@ Regra transversal (seção 0): ao final de cada etapa, executar os testes corres
 | 8 | Notificações | Concluída (pendência: credenciais do WhatsApp — canal desativado) |
 | 9 | IA Opcional | Concluída (pendência: provider externo não conectado) |
 | 10 | Segurança e Qualidade | Concluída (pendências: retenção/LGPD e teste de restauração) |
-| 11 | Deploy | Planejado |
+| 11 | Deploy | Em preparação (artefatos prontos; deploy não executado) |
 | 12 | Documentação e Entrega | Planejado |
 
 ---

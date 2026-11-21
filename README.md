@@ -241,6 +241,8 @@ Todas as variáveis estão documentadas em `.env.example`. Destaques:
 
 `.github/workflows/ci.yml` executa, em push e pull request para `main`:
 `npm ci` → `npm run lint` → `npm run typecheck` → `npm test` → `npm run build`.
+Em seguida, o job `docker-images` valida o build das imagens Docker da API e do worker
+(`docker/api.Dockerfile` e `docker/worker.Dockerfile`), sem publicá-las.
 
 O pipeline não faz deploy e não utiliza secrets.
 

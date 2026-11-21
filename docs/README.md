@@ -62,12 +62,12 @@ Toda a documentação aqui descrita é **Planejado / Proposto**. Nada foi implem
 
 | Documento | Descrição | Status |
 |---|---|---|
-| [architecture/deploy-infraestrutura.md](architecture/deploy-infraestrutura.md) | Deploy, ambientes, CI/CD e infraestrutura | Planejado |
+| [architecture/deploy-infraestrutura.md](architecture/deploy-infraestrutura.md) | Deploy, ambientes, CI/CD e infraestrutura | Implementado (preparação; deploy não executado) |
 | [architecture/seguranca-lgpd.md](architecture/seguranca-lgpd.md) | Revisão de segurança, headers, secrets, anexos e LGPD | Implementado |
 | [architecture/plano-de-testes.md](architecture/plano-de-testes.md) | Plano de testes e critérios de aceite | Planejado |
 | [architecture/sitemap-e-telas.md](architecture/sitemap-e-telas.md) | Sitemap, navegação, telas e matriz por perfil | Planejado |
 | [architecture/riscos-e-dependencias.md](architecture/riscos-e-dependencias.md) | Riscos, custos e dependências externas | Planejado |
-| [architecture/plano-incremental.md](architecture/plano-incremental.md) | As 12 etapas do plano de execução | Em andamento (Etapa 1) |
+| [architecture/plano-incremental.md](architecture/plano-incremental.md) | As 12 etapas do plano de execução | Concluídas (Etapas 1 a 10); Etapa 11 em preparação |
 
 ### 3.5 Decisões arquiteturais (ADRs)
 

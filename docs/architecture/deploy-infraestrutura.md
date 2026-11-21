@@ -1,8 +1,8 @@
 # Deploy e Infraestrutura
 
-**Versão:** 1.0
+**Versão:** 1.1
 **Data:** 21/11/2026
-**Status:** Planejado (não implementado)
+**Status:** Preparação implementada — deploy **não executado** (nenhum ambiente de produção provisionado)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Definir a estratégia de deploy e infraestrutura do QUALITY TEST, fiel à **seção 13** da especificação mestra: Vercel para o frontend, API NestJS em container, workers BullMQ persistentes, serviços gerenciados externos e CI/CD via GitHub Actions.
 
-> Conteúdo **Planejado**. Nenhum deploy foi realizado. Nenhuma credencial está definida.
+> Os artefatos de build já estão versionados (Dockerfiles, `.dockerignore`, scripts e job de CI). **Nenhum deploy foi realizado e nenhuma credencial está definida.** O que depende de decisão externa permanece **PENDENTE DE DEFINIÇÃO**.
 
 ---
 
@@ -24,17 +24,41 @@ O repositório oficial será conectado à Vercel para implantação do frontend 
 
 ## 3. Alocação de componentes (seção 13)
 
-| Componente | Onde executa | Observação |
+| Componente | Onde executa | Artefato no repositório |
 |---|---|---|
-| Frontend Next.js | **Vercel** | Deploy do app web |
-| Backend NestJS | Serviço/container apropriado | Avaliar serverless só após validar compatibilidade |
-| Workers BullMQ | Infraestrutura com **processos contínuos** | Não depende do modelo serverless da Vercel |
-| Redis | **Serviço gerenciado externo** | Fila e cache |
-| PostgreSQL | **Serviço gerenciado externo** | Banco principal |
-| Screenshots e anexos | **Storage S3-compatível** | URLs assinadas |
+| Frontend Next.js | **Vercel** | `apps/web` (configuração na plataforma — ver §7) |
+| Backend NestJS | Serviço/container apropriado | [docker/api.Dockerfile](../../docker/api.Dockerfile) |
+| Workers BullMQ | Infraestrutura com **processos contínuos** | [docker/worker.Dockerfile](../../docker/worker.Dockerfile) |
+| Redis | **Serviço gerenciado externo** | Consumido via `REDIS_*` |
+| PostgreSQL | **Serviço gerenciado externo** | Consumido via `DATABASE_URL` |
+| Screenshots e anexos | **Storage S3-compatível** | Consumido via `S3_*` (URLs assinadas) |
 | Domínio e HTTPS | Configurar quando o domínio for fornecido | PENDENTE DE DEFINIÇÃO |
-| Segredos | Variáveis de ambiente + cofre de secrets da plataforma | Nunca em código |
+| Segredos | Variáveis de ambiente + cofre de secrets da plataforma | Nunca em código (ver §7) |
 | Logs e monitoramento | Solução adequada para frontend, API e workers | PENDENTE DE DEFINIÇÃO |
+
+### 3.1 Artefatos de deploy versionados
+
+| Artefato | Descrição |
+|---|---|
+| `.dockerignore` | Reduz o contexto Docker e evita copiar segredos (`node_modules`, `dist`, `.next`, `docs`, `.env`, etc.) |
+| `docker/api.Dockerfile` | Build multi-stage da API (NestJS `apps/api/dist/main.js`) |
+| `docker/worker.Dockerfile` | Build multi-stage do worker (`apps/worker/dist/index.js`) |
+| Scripts npm | `docker:build:api`, `docker:build:worker`, `docker:build` (raiz) |
+| Job de CI | `docker-images` em [.github/workflows/ci.yml](../../.github/workflows/ci.yml) — valida o build das imagens a cada push/PR |
+
+**Build e execução local de validação:**
+
+```bash
+# Build (contexto = raiz do monorepo)
+npm run docker:build:api      # docker build -f docker/api.Dockerfile -t qualitytest-api .
+npm run docker:build:worker   # docker build -f docker/worker.Dockerfile -t qualitytest-worker .
+
+# Execução (variáveis vêm do ambiente/cofre — nunca embutidas na imagem)
+docker run --rm -p 3333:3333 --env-file .env.production qualitytest-api
+docker run --rm --env-file .env.production qualitytest-worker
+```
+
+> As imagens **não** executam migrações no boot: a aplicação das migrações é um passo controlado e separado (§8.2).
 
 ---
 
@@ -116,7 +140,7 @@ Repositório: `https://github.com/alexsandrosodre/qualitytest.git`
 Instruções previstas:
 
 - Inspecionar o repositório existente.
-- Configurar a branch principal conforme o **estado real do GitHub** (atualmente `main`, repositório vazio).
+- Configurar a branch principal conforme o **estado real do GitHub** (atualmente `main`).
 - Criar branches de feature e correção (nomes a definir — **PENDENTE DE DEFINIÇÃO**).
 - Trabalhar por pull requests quando possível.
 - Executar **lint, typecheck e testes** no CI.
@@ -132,7 +156,8 @@ flowchart LR
     Push["Push / Pull Request"] --> CI["GitHub Actions: lint + typecheck + testes"]
     CI --> G1{"Verificacoes obrigatorias OK?"}
     G1 -- "Nao" --> Block["Bloquear merge"]
-    G1 -- "Sim" --> Prev["Vercel Preview + ambiente de preview"]
+    G1 -- "Sim" --> Img["Build das imagens Docker (API + worker)"]
+    Img --> Prev["Vercel Preview + ambiente de preview"]
     Prev --> Val["Validacao manual do Preview"]
     Val --> Auth{"Autorizacao explicita para producao?"}
     Auth -- "Nao" --> Stop["Aguardar (sem deploy de producao)"]
@@ -140,16 +165,19 @@ flowchart LR
     Deploy --> Obs["Monitoramento + backup + rollback documentado"]
 ```
 
-### 6.2 Estágios do CI propostos
+### 6.2 Estágios do CI
 
-| Estágio | Conteúdo | Bloqueante? |
-|---|---|---|
-| Lint | ESLint/format | Sim |
-| Typecheck | `tsc --noEmit` (TypeScript strict) | Sim |
-| Testes unitários | Vitest/Jest | Sim |
-| Testes de integração/API | Supertest | Sim |
-| Testes E2E | Playwright | Sim (quando estável) |
-| Build | Build de web/api/worker/extension | Sim |
+Implementado em [.github/workflows/ci.yml](../../.github/workflows/ci.yml):
+
+| Job | Estágio | Conteúdo | Bloqueante? |
+|---|---|---|---|
+| `quality` | Lint | ESLint | Sim |
+| `quality` | Typecheck | `tsc --noEmit` (TypeScript strict) | Sim |
+| `quality` | Testes | Jest (unitários + e2e da API, worker) | Sim |
+| `quality` | Build | Build de shared/api/worker/web/extension | Sim |
+| `docker-images` | Imagens | `docker build` da API e do worker (sem publicar) | Sim (depende de `quality`) |
+
+> O job `docker-images` roda apenas após `quality` passar e **não publica** imagens (não há registry/credenciais definidos — **PENDENTE DE DEFINIÇÃO**). Publicação em registry fica para quando o provedor for escolhido.
 
 ---
 
@@ -158,14 +186,43 @@ flowchart LR
 - Segredos via variáveis de ambiente e cofre de secrets da plataforma.
 - **Nunca** em código, logs ou no frontend.
 - Ambientes com segredos próprios (dev/preview/prod).
-- A definição da lista final de variáveis é **PENDENTE DE DEFINIÇÃO** (depende de domínio, provedores e credenciais).
+- `.env.example` documenta o conjunto completo (valores de **desenvolvimento**).
+
+### 7.1 Variáveis de produção (referência)
+
+| Variável | Consumidor | Observação |
+|---|---|---|
+| `NODE_ENV` | API | `production` |
+| `API_PORT` | API | Porta interna do container (padrão `3333`) |
+| `CORS_ORIGIN` | API | Whitelist (CSV) das origens do frontend — **sem wildcard** |
+| `JWT_SECRET` | API | **≥ 32 caracteres**, exclusivo; a API recusa o valor de exemplo em produção (ETAPA 10) |
+| `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | API | TTLs de access/refresh token |
+| `THROTTLE_TTL` / `THROTTLE_LIMIT` | API | Rate limiting global |
+| `DATABASE_URL` | API, worker | PostgreSQL gerenciado |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB` / `REDIS_PASSWORD` | API, worker | Redis gerenciado (fila BullMQ) |
+| `NOTIFICATIONS_ENABLED` / `NOTIFICATIONS_CONCURRENCY` | API, worker | Fila de notificações |
+| `WEB_BASE_URL` | API, worker | URL pública do frontend (links nas mensagens) |
+| `AI_ENABLED` / `AI_PROVIDER` | API | IA opcional (padrão desativada) |
+| `S3_ENDPOINT` / `S3_REGION` / `S3_BUCKET` / `S3_ACCESS_KEY` / `S3_SECRET_KEY` | API | Storage de anexos (URLs assinadas) |
+| `NEXT_PUBLIC_API_URL` | Frontend (Vercel) | URL pública da API (`https://<api>/api`) — **embutida no build** do Next.js |
+| `SEED_ADMIN_PASSWORD` / `SEED_ADMIN_EMAIL` | Seed | **Somente** para o seed; não é variável de runtime da API |
+
+> A lista definitiva de valores depende de domínio, provedores e credenciais — **PENDENTE DE DEFINIÇÃO**.
+
+### 7.2 Configuração do frontend na Vercel
+
+- Importar o repositório e definir o **Root Directory** como `apps/web`.
+- Framework preset **Next.js** (detectado automaticamente).
+- Definir `NEXT_PUBLIC_API_URL` nas variáveis de ambiente do projeto (Preview e Production, com valores distintos).
+- O backend (API/worker) **não** roda na Vercel — apenas o frontend.
+- O domínio oficial e a conta/projeto na Vercel são **PENDENTES DE DEFINIÇÃO**.
 
 ---
 
 ## 8. Logs, monitoramento e operação
 
 - Solução adequada para frontend, API e workers.
-- Logs sem credenciais ou dados sensíveis desnecessários.
+- Logs sem credenciais ou dados sensíveis desnecessários (a API e o worker registram em `stdout`/`stderr`).
 - Backups e **restauração testada** (seção 14).
 - Rollback documentado.
 
@@ -196,16 +253,40 @@ pg_restore --clean --no-owner --dbname=qualitytest_restore qualitytest-YYYYMMDD.
 
 > O **teste de restauração** deve ser executado em ambiente isolado (nunca sobrescrevendo produção) e registrado. Status atual: procedimento documentado; execução **PENDENTE** (aguarda o provedor gerenciado).
 
+### 8.2 Migrações de banco (runbook)
+
+As migrações Prisma são aplicadas de forma controlada, **fora do boot** da aplicação:
+
+```bash
+# A partir da raiz do monorepo, com DATABASE_URL apontando para o banco alvo
+npm run db:migrate:deploy
+```
+
+- Revisar a migração (`apps/api/prisma/migrations/`) e o plano de rollback antes de aplicar.
+- **Nunca** usar `prisma migrate dev` em produção (pode resetar dados).
+- Aplicar antes de publicar a nova versão da API que depende do schema.
+- Registrar a versão aplicada e o responsável.
+
+### 8.3 Rollback (runbook)
+
+- **Aplicação:** publicar novamente a imagem/versão anterior (tag imutável por release).
+- **Banco:** migrações do Prisma são **somente avanço**; o rollback típico é aplicar uma **nova migração** que desfaça a mudança (expand/contract), nunca editar migração já aplicada.
+- **Configuração:** reverter variáveis de ambiente/segredos para os valores anteriores.
+- **Validação pós-rollback:** `/api/health` respondendo e verificação das tabelas-chave.
+- Registrar incidente, causa e horários.
+
 ---
 
-## 9. Checklist de deploy (proposto)
+## 9. Checklist de deploy
 
 - [ ] Migrações revisadas.
-- [ ] Testes de CI verdes.
+- [x] Testes de CI verdes (lint, typecheck, testes e build).
+- [x] Build das imagens Docker validado no CI.
 - [ ] Preview validado.
 - [ ] Segredos de produção configurados.
+- [ ] Domínio/HTTPS configurados.
 - [ ] Backup realizado.
-- [ ] Plano de rollback documentado.
+- [ ] Plano de rollback documentado (procedimento definido em §8.3).
 - [ ] Autorização explícita para produção.
 - [ ] Monitoramento ativo após o deploy.
 
@@ -218,8 +299,9 @@ pg_restore --clean --no-owner --dbname=qualitytest_restore qualitytest-YYYYMMDD.
 - Provedor de PostgreSQL gerenciado — **PENDENTE DE DEFINIÇÃO**.
 - Provedor de Redis gerenciado — **PENDENTE DE DEFINIÇÃO**.
 - Provedor de storage S3-compatível — **PENDENTE DE DEFINIÇÃO**.
+- Registry de imagens (publicação das imagens Docker) — **PENDENTE DE DEFINIÇÃO**.
 - Solução de logs/monitoramento — **PENDENTE DE DEFINIÇÃO**.
-- Nomes de branches — **PENDENTE DE DEFINIÇÃO**.
+- Nomes de branches de feature/correção — **PENDENTE DE DEFINIÇÃO**.
 - Capacidade/plano dos serviços gerenciados — **PENDENTE DE DEFINIÇÃO**.
 
 ---
@@ -229,4 +311,5 @@ pg_restore --clean --no-owner --dbname=qualitytest_restore qualitytest-YYYYMMDD.
 - Especificação mestra, seções 12, 13, 14.
 - [arquitetura-geral.md](arquitetura-geral.md)
 - [c4.md](c4.md)
+- [seguranca-lgpd.md](seguranca-lgpd.md)
 - [riscos-e-dependencias.md](riscos-e-dependencias.md)

@@ -1,0 +1,40 @@
+# =============================================================================
+# QUALITY TEST - Contexto de build Docker (raiz do monorepo)
+# =============================================================================
+# Reduz o contexto enviado ao daemon e evita copiar segredos/saídas para a imagem.
+# IMPORTANTE: os arquivos `package.json` de TODOS os workspaces devem permanecer
+# no contexto, pois o `npm ci` precisa deles para validar o lockfile único.
+# =============================================================================
+
+# Dependências e saídas de build (reconstruídas dentro da imagem)
+**/node_modules
+**/dist
+**/build
+**/out
+**/.next
+**/coverage
+**/.turbo
+**/*.tsbuildinfo
+
+# Git, CI e editores
+.git
+.github
+.idea
+.vscode
+*.swp
+
+# Documentação e arquivos não usados no build
+docs
+**/*.md
+
+# Ambiente (nunca copiar segredos para a imagem)
+.env
+.env.*
+!.env.example
+
+# Caches e dados locais
+.vercel
+.eslintcache
+docker/.data
+apps/api/prisma/*.db
+apps/api/prisma/*.db-journal
