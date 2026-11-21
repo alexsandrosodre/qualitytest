@@ -17,6 +17,9 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
+    "test:e2e": "npm run build --workspace @qualitytest/extension && playwright test",
+    "test:e2e:install": "playwright install --with-deps chromium",
+    "test:e2e:report": "playwright show-report",
     "build": "npm run build --workspace @qualitytest/shared && npm run build --workspace @qualitytest/api && npm run build --workspace @qualitytest/worker && npm run build --workspace @qualitytest/web && npm run build --workspace @qualitytest/extension",
     "dev:api": "npm run start:dev --workspace @qualitytest/api",
     "dev:web": "npm run dev --workspace @qualitytest/web",
@@ -40,6 +43,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@playwright/test": "^1.49.0",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react-hooks": "^5.0.0",

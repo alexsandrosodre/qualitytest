@@ -315,8 +315,9 @@ function findDuplicates(
  *
  * Não requer nenhum serviço externo: aplica heurísticas de palavras-chave e
  * similaridade de títulos. É a implementação padrão quando `AI_ENABLED=true` e
- * `AI_PROVIDER=local`. Adaptadores externos (ex.: OpenAI-compatível) podem ser
- * adicionados atrás do mesmo contrato `AiProvider` — ainda NÃO conectados.
+ * `AI_PROVIDER=local`. O adaptador externo compatível com OpenAI está
+ * implementado em `external-ai.provider.ts` e é selecionado com
+ * `AI_PROVIDER=external` (exige `AI_BASE_URL`/`AI_API_KEY`/`AI_MODEL`).
  */
 export class LocalDeterministicAiProvider implements AiProvider {
   readonly name = 'local-deterministic';

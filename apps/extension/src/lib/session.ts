@@ -4,32 +4,43 @@ import type { Session } from './types';
 /**
  * Persistência da sessão autenticada.
  *
- * Usamos `chrome.storage.local`, que é ISOLADO da página: scripts do site em
- * teste (conteúdo e terceiros) não têm acesso a este storage — diferente de
- * `localStorage`, que ficaria exposto ao JavaScript da própria página.
+ * A sessão (com `accessToken`/`refreshToken`) é guardada em
+ * `chrome.storage.session`, que atende ao requisito de "não armazenar tokens em
+ * local inseguro":
  *
- * ATENÇÃO: o mecanismo de armazenamento SEGURO do token na extensão está
- * PENDENTE DE DEFINIÇÃO (seção 11 do doc de estratégia). A escolha atual
- * (`chrome.storage.local`) evita exposição à página, mas não é criptografada em
- * disco. Caso o requisito evolua para um cofre/criptografia dedicada, migrar
- * a implementação sem alterar a interface abaixo.
+ *  - ISOLADO da página: scripts do site em teste (conteúdo e terceiros) não têm
+ *    acesso a este storage — diferente de `localStorage`, exposto ao JavaScript
+ *    da própria página.
+ *  - SOMENTE EM MEMÓRIA: não é gravado em disco e é limpo quando o navegador é
+ *    encerrado — diferente de `chrome.storage.local`, que persiste em disco e
+ *    sobrevive ao reinício.
+ *  - Acesso restrito aos contextos confiáveis da extensão (service worker e
+ *    páginas da própria extensão) por padrão.
+ *
+ * Requer Chrome 102+ (declarado em `minimum_chrome_version` no manifest).
+ * A interface abaixo isola o restante do código do mecanismo de armazenamento.
  */
+
+/** Área de armazenamento em memória usada para a sessão. */
+function storage(): chrome.storage.StorageArea {
+  return chrome.storage.session;
+}
 
 /** Lê a sessão persistida; retorna `null` se ausente ou inválida. */
 export async function readSession(): Promise<Session | null> {
-  const stored = await chrome.storage.local.get(SESSION_STORAGE_KEY);
+  const stored = await storage().get(SESSION_STORAGE_KEY);
   const value = stored[SESSION_STORAGE_KEY];
   return isSession(value) ? value : null;
 }
 
 /** Grava (ou sobrescreve) a sessão persistida. */
 export async function writeSession(session: Session): Promise<void> {
-  await chrome.storage.local.set({ [SESSION_STORAGE_KEY]: session });
+  await storage().set({ [SESSION_STORAGE_KEY]: session });
 }
 
 /** Remove a sessão persistida. */
 export async function clearSession(): Promise<void> {
-  await chrome.storage.local.remove(SESSION_STORAGE_KEY);
+  await storage().remove(SESSION_STORAGE_KEY);
 }
 
 function isSession(value: unknown): value is Session {

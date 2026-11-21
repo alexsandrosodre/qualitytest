@@ -20,7 +20,10 @@ Os scripts são definidos na raiz do monorepo (`package.json`):
 
 | Comando | O que executa |
 |---|---|
-| `npm test` | Testes de todos os workspaces que possuem script `test` (hoje: `api` e `worker`) |
+| `npm test` | Testes de todos os workspaces que possuem script `test` (`api`, `worker` e `extension`), **com coleta de cobertura** |
+| `npm run test:e2e` | E2E de navegador (Playwright) — compila a extensão e executa os projetos `web` e `extension` |
+| `npm run test:e2e:install` | Instala o navegador Chromium do Playwright (`--with-deps`) |
+| `npm run test:e2e:report` | Abre o relatório HTML do Playwright |
 | `npm run typecheck` | `tsc --noEmit` em todos os workspaces |
 | `npm run lint` | ESLint (flat config) em todo o monorepo |
 | `npm run build` | Build de `shared` → `api` → `worker` → `web` → `extension` |
@@ -33,10 +36,12 @@ Os mesmos passos são executados no CI ([.github/workflows/ci.yml](../../.github
 
 | Tipo | Ferramenta | Onde |
 |---|---|---|
-| **Unitário** | Jest | `apps/*/src/**/*.spec.ts` |
+| **Unitário** | Jest | `apps/*/src/**/*.spec.ts(x)` |
 | **Integração / E2E de API** | Jest + Supertest | `apps/api/test/*.e2e-spec.ts` |
 | **Isolamento entre projetos** | Jest + Supertest | `apps/api/test/project-isolation.e2e-spec.ts` |
 | **Segurança** | Jest | `apps/api/src/common/security/security.middleware.spec.ts`, `apps/api/src/common/config/env.spec.ts` |
+| **E2E de navegador (web)** | Playwright | `e2e/web/*.spec.ts` |
+| **E2E da extensão (MV3)** | Playwright | `e2e/extension/*.spec.ts` |
 
 ---
 
@@ -44,12 +49,23 @@ Os mesmos passos são executados no CI ([.github/workflows/ci.yml](../../.github
 
 | Workspace | Suítes | Testes | Situação |
 |---|---|---|---|
-| **API** (`apps/api`) | 20 | 191 | Aprovados |
-| **Worker** (`apps/worker`) | 1 | 9 | Aprovados |
-| **Frontend** (`apps/web`) | 0 | 0 | **Sem testes automatizados** |
-| **Extensão** (`apps/extension`) | 0 | 0 | **Sem testes automatizados** |
+| **API** (`apps/api`) | 22 | 201 | Aprovados |
+| **Worker** (`apps/worker`) | 2 | 17 | Aprovados |
+| **Extensão** (`apps/extension`) | 1 | 6 | Aprovados |
+| **Frontend** (`apps/web`) | 0 | 0 | Sem unitários (coberto por E2E `web`) |
+| **E2E navegador** (`e2e/`) | 4 | 4 | Aprovados (2 web + 2 extensão) |
 
-> Os totais acima refletem a execução vigente do repositório. A API concentra testes unitários (regras de negócio, tokens, senha, transições de status, sugestão de projeto, IA local, configuração de ambiente e headers de segurança) e testes de integração/E2E via Supertest.
+> Os totais refletem a execução vigente do repositório. A API concentra testes unitários (regras de negócio, tokens, senha, transições de status, sugestão de projeto, IA local, configuração de ambiente e headers de segurança) e testes de integração/E2E via Supertest. O worker cobre canais, configuração e processamento; a extensão cobre o módulo de sessão (token seguro).
+
+### 4.1 Cobertura medida
+
+| Workspace | Statements | Branches | Functions | Lines | Meta (stmts) |
+|---|---|---|---|---|---|
+| **API** | 83.99% | 60.39% | 79.29% | 83.31% | 80% |
+| **Worker** | 89.31% | 70.37% | 85% | 89.84% | 85% |
+| **Extensão** | 100% | 86.66% | 100% | 100% | 90% |
+
+> As metas (`coverageThreshold`) são verificadas a cada `npm test`; ver [plano-de-testes.md](plano-de-testes.md) §6.1.
 
 ---
 
@@ -69,9 +85,8 @@ Os mesmos passos são executados no CI ([.github/workflows/ci.yml](../../.github
 
 ## 6. Lacunas conhecidas
 
-- **Sem E2E de navegador (Playwright).** Os fluxos de ponta a ponta no navegador (login, telas, dashboard, extensão) **não** possuem testes automatizados. Há apenas E2E de **API** via Supertest. Ver [pendencias-conhecidas.md](pendencias-conhecidas.md).
-- **Sem testes no frontend (`apps/web`) e na extensão (`apps/extension`).**
-- **Sem metas de cobertura definidas** (percentual mínimo e relatório de cobertura ainda **PENDENTE DE DEFINIÇÃO**, conforme [plano-de-testes.md](plano-de-testes.md)).
+- **Sem unitários no frontend (`apps/web`)** — o app web ainda não possui testes unitários; os fluxos críticos começam a ser cobertos por E2E de navegador (Playwright).
+- **E2E de navegador com cobertura inicial** — a suíte Playwright cobre login (web) e o popup/sessão da extensão; fluxos completos (registro de ocorrência, homologação, isolamento pela UI) ainda não estão automatizados.
 - **Teste de restauração de backup não executado** — procedimento documentado, execução aguarda o provedor de PostgreSQL gerenciado ([deploy-infraestrutura.md](deploy-infraestrutura.md) §8.1).
 
 ---

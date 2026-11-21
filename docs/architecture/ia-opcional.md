@@ -2,7 +2,7 @@
 
 **Versão:** 1.0
 **Data:** 21/11/2026
-**Status:** Implementado (módulo desativado por padrão; provedor externo previsto no contrato, porém não conectado)
+**Status:** Implementado (módulo desativado por padrão; provedor externo plugável via `AI_PROVIDER=external`)
 
 ---
 
@@ -49,13 +49,17 @@ classDiagram
         +enabled = false
         +suggest() ServiceUnavailableException
     }
-    class ExternalAiAdapter {
-        <<planned, not connected>>
+    class ExternalAiProvider {
+        +name = "external-openai-compatible"
+        +model = (AI_MODEL)
+        +enabled = true
     }
     AiProvider <|.. LocalDeterministicAiProvider
     AiProvider <|.. DisabledAiProvider
-    AiProvider <|.. ExternalAiAdapter
+    AiProvider <|.. ExternalAiProvider
 ```
+
+> A implementação ativa é escolhida em runtime por `AI_ENABLED` + `AI_PROVIDER`: `local` (padrão, determinístico e sem rede) ou `external` (adaptador compatível com OpenAI, exige credenciais). Sem credenciais, `external` recai em `DisabledAiProvider`.
 
 - `AiAnalysesService` resolve o acesso, monta o insumo (campos não sensíveis), chama o provider, persiste a análise (`AIAnalysis`) e registra auditoria (`AI_ANALYSIS_GENERATED`).
 - `AiAnalysesController` expõe `GET`/`POST /occurrences/:occurrenceId/ai-analyses` (sem `:projectId` — a autorização é resolvida no serviço a partir da ocorrência).
@@ -83,9 +87,13 @@ Cada sugestão carrega `confidence` (0–1) e `rationale` (motivo legível). O r
 | Variável | Valores | Efeito |
 |---|---|---|
 | `AI_ENABLED` | `true` / `false` (padrão `false`) | Habilita a geração de sugestões. |
-| `AI_PROVIDER` | `local` (padrão) / outro | Apenas `local` usa o provedor determinístico; outros valores caem em `DisabledAiProvider` com aviso. |
+| `AI_PROVIDER` | `local` (padrão) / `external` / outro | `local` usa o provedor determinístico; `external` usa o adaptador compatível com OpenAI; valores desconhecidos recaem em `DisabledAiProvider` com aviso. |
+| `AI_BASE_URL` | URL | Obrigatório com `external`. URL base compatível com OpenAI, incluindo o prefixo de versão (ex.: `https://api.openai.com/v1`). |
+| `AI_API_KEY` | segredo | Obrigatório com `external`. **Nunca** persistido nem registrado em log. |
+| `AI_MODEL` | string | Obrigatório com `external`. Identificador do modelo a ser usado. |
+| `AI_TIMEOUT_MS` | inteiro (padrão `20000`) | Tempo-limite da chamada HTTP do provedor externo. |
 
-> Adaptadores externos (ex.: OpenAI-compatível) podem ser plugados atrás do mesmo contrato `AiProvider`, mas **NÃO estão conectados** nesta versão.
+> O **provedor externo** (compatível com a API OpenAI `POST {baseUrl}/chat/completions`) está **implementado** e é plugável atrás do mesmo contrato `AiProvider`. Ele só é instanciado quando `AI_ENABLED=true` **e** `AI_PROVIDER=external` **e** as três credenciais (`AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`) estão presentes; caso contrário, o módulo permanece desativado. O adaptador envia apenas dados **não sensíveis** e exige resposta em JSON estrito (`response_format: json_object`), validando/normalizando as sugestões contra os domínios conhecidos.
 
 ---
 
@@ -141,14 +149,18 @@ sequenceDiagram
 
 ## 9. Testes
 
-- **Unitários** (`src/ai/local-deterministic-ai.provider.spec.ts`, 11 casos): provider habilitado/nome/modelo; resumo e fallback; truncamento; categoria por palavra-chave e não-sugestão quando coincide; prioridade crítica e não-sugestão; duplicidade excluindo a própria; limite de 3; `DisabledAiProvider` (desabilitado + `503`).
+- **Unitários**
+  - `src/ai/local-deterministic-ai.provider.spec.ts`, 11 casos: provider habilitado/nome/modelo; resumo e fallback; truncamento; categoria por palavra-chave e não-sugestão quando coincide; prioridade crítica e não-sugestão; duplicidade excluindo a própria; limite de 3; `DisabledAiProvider` (desabilitado + `503`).
+  - `src/ai/external-ai.provider.spec.ts`, 7 casos: identificação/estado do adaptador; endpoint e cabeçalho `Bearer` (sem vazar a chave); normalização e filtragem de sugestões inválidas; tolerância a cercas Markdown e a JSON inválido; erro HTTP; erro de rede; resposta sem conteúdo.
 - **E2E** (`test/ai.e2e-spec.ts`, 9 casos): `401` sem autenticação; membro lista com `enabled=true` e `items=[]`; outsider `403`; ocorrência inexistente `404`; geração `201` com sugestões e auditoria; listagem de análises; ocorrência de outro projeto `403`; módulo desativado `503` + `enabled=false`.
+
+> Os testes do adaptador externo **mockam** `fetch` — nenhuma chamada de rede real é feita.
 
 ---
 
 ## 10. Pontos pendentes de definição
 
-- Provedor externo (ex.: OpenAI-compatível) — **PENDENTE DE DEFINIÇÃO** (contrato previsto, não conectado).
+- Provedor externo (ex.: OpenAI-compatível) — **implementado** (adaptador plugável via `AI_PROVIDER=external`); a escolha do provedor concreto e o fornecimento das credenciais seguem **PENDENTE DE DEFINIÇÃO**.
 - Base legal / política de privacidade para envio de dados a terceiros — **PENDENTE DE DEFINIÇÃO**.
 - Limites de uso e custos do provedor externo — **PENDENTE DE DEFINIÇÃO**.
 
@@ -162,8 +174,9 @@ sequenceDiagram
 
 **API (`apps/api`)**
 - `ai/ai-provider.ts`: token `AI_PROVIDER`, contrato `AiProvider`, `DisabledAiProvider` e `LocalDeterministicAiProvider`.
+- `ai/external-ai.provider.ts`: `ExternalAiProvider` (compatível com OpenAI `chat/completions`), com timeout via `AbortController`, `Authorization: Bearer`, `response_format: json_object`, prompt de sistema em pt-BR e normalização defensiva das sugestões; nunca registra o token.
 - `ai/ai-analyses.service.ts`: resolução de acesso (reutiliza `ProjectAccessService`), montagem do insumo, persistência e auditoria.
-- `ai/ai-analyses.controller.ts`, `ai/ai-analyses.mapper.ts` (validação defensiva do JSON) e `ai/ai.module.ts` (factory do provider).
+- `ai/ai-analyses.controller.ts`, `ai/ai-analyses.mapper.ts` (validação defensiva do JSON) e `ai/ai.module.ts` (factory do provider: `local` / `external` / desativado).
 - `AiModule` registrado em `AppModule`.
 
 **Frontend (`apps/web`)**

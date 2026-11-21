@@ -357,7 +357,9 @@ model NotificationDelivery {
   @@map("notification_deliveries")
 }
 
-/// Trilha de auditoria. Não deve ser editável por usuários comuns.
+/// Trilha de auditoria — SOMENTE INSERÇÃO. A aplicação apenas registra; a
+/// imutabilidade (sem UPDATE/DELETE/TRUNCATE) é reforçada no banco por trigger,
+/// na migration `20261121010000_audit_logs_immutable`.
 model AuditLog {
   id          String   @id @default(cuid())
   actorUserId String

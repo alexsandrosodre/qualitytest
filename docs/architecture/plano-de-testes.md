@@ -10,7 +10,7 @@
 
 Definir a estratégia de testes do QUALITY TEST, os níveis, as ferramentas e a lista **completa** de cenários obrigatórios e critérios de aceite do MVP, fiel à **seção 16** da especificação mestra.
 
-> Estratégia **executada**. Os testes foram implementados e os resultados consolidados em [relatorio-de-testes.md](relatorio-de-testes.md). Pendência: E2E de navegador (Playwright) e metas de cobertura.
+> Estratégia **executada**. Os testes foram implementados e os resultados consolidados em [relatorio-de-testes.md](relatorio-de-testes.md). E2E de navegador (Playwright) e metas de cobertura estão **implementados** (ver seções 6.1 e 6.2).
 
 ---
 
@@ -100,6 +100,27 @@ flowchart TB
 | Extensão Chrome | Sim | - | - | Sim |
 | IA (opcional) | Sim | Sim | Sim | - |
 
+### 6.1 Metas de cobertura
+
+Percentuais mínimos definidos em `coverageThreshold` por workspace (`jest.config.js`). `npm test` coleta cobertura (`--coverage`) e **falha** quando a meta não é atingida.
+
+| Workspace | Statements | Branches | Functions | Lines |
+|---|---|---|---|---|
+| `apps/api` | 80% | 55% | 75% | 80% |
+| `apps/worker` | 85% | 65% | 80% | 85% |
+| `apps/extension` | 90% | 80% | 90% | 90% |
+
+> Metas calibradas ligeiramente abaixo da cobertura medida (API ~84% stmts, worker ~89% stmts, extensão ~100% no módulo de sessão) para barrar regressões sem quebrar o build por variações pequenas.
+
+### 6.2 E2E de navegador (Playwright)
+
+Suíte em `e2e/`, executada por `npm run test:e2e` (compila a extensão antes de rodar):
+
+- **`web`** — frontend (`apps/web`) via `next dev`; valida renderização e validação do formulário de login.
+- **`extension`** — extensão Chrome (MV3) carregada em contexto persistente (`--load-extension`), validando o registro do service worker e o popup sem sessão.
+
+Pré-requisitos: `npm run test:e2e:install` (instala o Chromium do Playwright). Relatório: `npm run test:e2e:report`.
+
 ---
 
 ## 7. Critérios para considerar uma etapa "concluída"
@@ -114,8 +135,8 @@ Conforme a especificação (seção 0): não declarar uma etapa concluída apena
 
 ## 8. Pontos pendentes de definição
 
-- Escolha final entre Vitest e Jest por app — **PENDENTE DE DEFINIÇÃO** (conforme compatibilidade).
-- Metas de cobertura — **PENDENTE DE DEFINIÇÃO**.
+- Escolha final entre Vitest e Jest por app — **RESOLVIDO**: Jest adotado em todos os workspaces (API, worker e extensão).
+- Metas de cobertura — **RESOLVIDO** (ver seção 6.1).
 - Estratégia de dados de teste (fixtures/seed) — **PENDENTE DE DEFINIÇÃO**.
 
 ---

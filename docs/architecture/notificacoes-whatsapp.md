@@ -2,7 +2,7 @@
 
 **Versão:** 1.1
 **Data:** 21/11/2026
-**Status:** Implementado (canal WhatsApp desativado por ausência de credenciais oficiais)
+**Status:** Implementado (canal WhatsApp oficial via Cloud API integrado e **desativado por padrão** até haver credenciais)
 
 ---
 
@@ -10,7 +10,7 @@
 
 Descrever o serviço desacoplado de notificação do QUALITY TEST, com foco no canal WhatsApp, suas responsabilidades, resiliência, adaptadores de canal e **limitações atuais**. Fiel à **seção 7** da especificação mestra.
 
-> **Estado atual do canal WhatsApp: DESATIVADO** por ausência de credenciais oficiais.
+> **Estado atual do canal WhatsApp: DESATIVADO por padrão** — a integração com a WhatsApp Business Platform / Cloud API oficial (Meta) está implementada, porém permanece inerte enquanto não houver credenciais no ambiente (ver seção 7).
 > Serviço implementado na **Etapa 8** (ver seção 12).
 
 ---
@@ -80,7 +80,7 @@ classDiagram
         +send(destination, message) DeliveryResult
         +validateConfig(config) boolean
     }
-    class WhatsAppChannel {
+    class WhatsAppChannelAdapter {
         +send(destination, message) DeliveryResult
     }
     class EmailChannel {
@@ -89,12 +89,12 @@ classDiagram
     class TeamsChannel {
         +send(destination, message) DeliveryResult
     }
-    NotificationChannel <|.. WhatsAppChannel
+    NotificationChannel <|.. WhatsAppChannelAdapter
     NotificationChannel <|.. EmailChannel
     NotificationChannel <|.. TeamsChannel
 ```
 
-> `EmailChannel` e `TeamsChannel` são **planejados/futuros** e não implementados nesta versão.
+> `WhatsAppChannelAdapter` usa a **Cloud API oficial** (`POST {graph}/{version}/{phoneNumberId}/messages`) e é **inerte** sem credenciais. `EmailChannel` e `TeamsChannel` são **planejados/futuros** e não implementados nesta versão (o registro devolve `discarded`).
 
 ---
 
@@ -116,7 +116,7 @@ Conforme a seção 7.1, **antes de implementar qualquer fluxo** é obrigatório 
 - **Não utilizar automação não oficial do WhatsApp Web** como dependência obrigatória ou caminho de produção.
 - Se grupos existentes não forem suportados, oferecer alternativas autorizadas: **destinatários individuais**, grupos oficialmente elegíveis, ou outros canais corporativos. O painel deve permitir **configurar destinos por projeto**.
 
-> **Estado:** canal WhatsApp **desativado**. Nenhuma mensagem é enviada. A especificação prevê que a notificação "pode permanecer desativada até haver credenciais oficiais" (critério de aceite nº 10).
+> **Estado:** a integração com a **WhatsApp Business Platform / Cloud API oficial (Meta)** está **implementada** no adaptador `WhatsAppChannelAdapter`, porém o canal permanece **DESATIVADO por padrão**: sem `WHATSAPP_PHONE_NUMBER_ID` e `WHATSAPP_CLOUD_API_TOKEN` no ambiente, o adaptador é **inerte** (nenhuma chamada de rede) e a entrega é registrada como **DESCARTADO**. A especificação prevê que a notificação "pode permanecer desativada até haver credenciais oficiais" (critério de aceite nº 10). Como ainda **não há credenciais oficiais**, **nenhuma mensagem é enviada** nesta versão.
 
 ---
 
@@ -128,7 +128,7 @@ flowchart LR
     Q --> W["Worker de Notificacao"]
     W --> DB[("PostgreSQL:<br/>NotificationRule / Delivery")]
     W --> CH{"Canal habilitado?"}
-    CH -- "WhatsApp (DESATIVADO)" --> WA["WhatsApp Cloud API<br/>Meta - sem credenciais"]
+    CH -- "WhatsApp (desativado por padrao)" --> WA["WhatsApp Cloud API (Meta)<br/>inerte sem credenciais"]
     CH -- "E-mail / Teams (futuro)" --> ALT["Adaptadores futuros"]
     WA -- "falha" --> RETRY["Retentativa com backoff"]
     RETRY --> Q
@@ -149,7 +149,7 @@ sequenceDiagram
     participant Q as Fila BullMQ
     participant W as Worker
     participant CH as Canal (adaptador)
-    participant WA as WhatsApp Cloud API (DESATIVADO)
+    participant WA as WhatsApp Cloud API (desativado por padrao)
 
     Note over API: Ocorrencia JA salva com sucesso
     API->>Q: Enfileira evento (occurrenceId, eventType)
@@ -188,9 +188,9 @@ sequenceDiagram
 
 ## 11. Pontos pendentes de definição
 
-- Credenciais oficiais da WhatsApp Business Platform / Cloud API (Meta) — **PENDENTE DE DEFINIÇÃO**.
+- Credenciais oficiais da WhatsApp Business Platform / Cloud API (Meta) — **PENDENTE DE DEFINIÇÃO** (a integração está implementada; faltam `WHATSAPP_PHONE_NUMBER_ID` e `WHATSAPP_CLOUD_API_TOKEN`).
 - Elegibilidade da conta e suporte a grupos — **PENDENTE DE DEFINIÇÃO** (verificar doc oficial na implementação).
-- Templates aprovados e política de janela de atendimento — **PENDENTE DE DEFINIÇÃO**.
+- Templates aprovados e política de janela de atendimento — **PENDENTE DE DEFINIÇÃO** (o envio por template **ou** texto livre já é suportado quando configurado).
 - Destinos autorizados por projeto — **PENDENTE DE DEFINIÇÃO**.
 - Provedor de e-mail/Teams (futuro) — **PENDENTE DE DEFINIÇÃO**.
 
@@ -208,11 +208,12 @@ Implementado conforme as seções 3 a 10 acima, com o **canal WhatsApp desativad
 **Worker (`apps/worker`)**
 - Processador BullMQ (fila `notifications`, `attempts: 3`, backoff exponencial) com DLQ `notifications-dlq`.
 - Registro de cada tentativa em `NotificationDelivery` com **idempotência por evento/destino** (retentativa não duplica).
-- Registro de canais (`createChannelRegistry`): `WhatsAppChannelAdapter` **sempre descarta** com a mensagem de canal desativado; `EMAIL`/`TEAMS` reservados para evolução futura.
+- Registro de canais (`createChannelRegistry`): `WhatsAppChannelAdapter` envia pela **Cloud API oficial** quando há credenciais (`WHATSAPP_*`) e é **inerte** (`discarded`, sem rede) quando não há; `EMAIL`/`TEAMS` reservados para evolução futura (`discarded`).
+- Configuração lida por `readWhatsAppConfig()` (`WHATSAPP_API_VERSION` padrão `v21.0`; `WHATSAPP_TEMPLATE_LANGUAGE` padrão `pt_BR`; `WHATSAPP_TEMPLATE_NAME` opcional). Classificação do resultado: `200` → `ENVIADO`; `429`/`5xx` → `FALHA` (retentativa); demais `4xx` → `DESCARTADO` (nova tentativa não resolveria).
 - Mensagem padronizada conforme a seção 4; `destinationConfig` nunca guarda segredos (lista permitida validada em `@qualitytest/shared`).
 
 **Testes**
-- Unitários do worker: 9 casos (sucesso, descarte por canal desativado, idempotência, falha + retentativa, resolução por regra, filtro de prioridade, payload/ocorrência inválidos, destino desabilitado).
+- Unitários do worker: 9 casos do processador (sucesso, descarte por canal desativado, idempotência, falha + retentativa, resolução por regra, filtro de prioridade, payload/ocorrência inválidos, destino desabilitado) + 8 casos dos canais (`channels.spec.ts`: inerte sem credenciais e sem rede, texto livre, template, `4xx`→descartado, `429`/`5xx`→falha, falha de rede→falha, destino inválido→descartado).
 - E2E da API: 19 casos (autorização, validação de config sem segredos, isolamento por projeto, regras, histórico paginado, reprocessamento).
 
 ---

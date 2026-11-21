@@ -18,9 +18,9 @@ Consolidar, de forma honesta, as **pendências e limitações conhecidas** do QU
 
 | # | Pendência | Estado | Detalhe |
 |---|---|---|---|
-| P1 | **WhatsApp oficial sem credenciais (canal desativado)** | PENDENTE DE DEFINIÇÃO | A integração com a WhatsApp Business Platform / Cloud API oficial não está ativa por ausência de elegibilidade/credenciais. O canal é desacoplado e desativável; a fila de notificações opera sem ele. Ver [notificacoes-whatsapp.md](notificacoes-whatsapp.md). |
-| P2 | **Domínio oficial da extensão e armazenamento seguro do token** | PENDENTE DE DEFINIÇÃO | Falta definir o domínio oficial e o mecanismo de armazenamento seguro do token na extensão Chrome. Ver [extensao-chrome.md](extensao-chrome.md). |
-| P3 | **Provedor externo de IA não conectado** | PENDENTE DE DEFINIÇÃO | O contrato prevê provider externo, mas apenas o provider local determinístico (sem rede) está implementado. Ver [ia-opcional.md](ia-opcional.md). |
+| P1 | **WhatsApp oficial: integração pronta, credenciais pendentes** | PENDENTE DE DEFINIÇÃO (código pronto) | A integração com a WhatsApp Business Platform / Cloud API oficial está **implementada**; permanece **DESATIVADA por padrão** até haver `WHATSAPP_PHONE_NUMBER_ID`/`WHATSAPP_CLOUD_API_TOKEN`. Sem credenciais o canal é inerte e a fila de notificações opera normalmente. Ver [notificacoes-whatsapp.md](notificacoes-whatsapp.md). |
+| P2 | **Domínio oficial da extensão** | PENDENTE DE DEFINIÇÃO (token resolvido) | O build já aceita o domínio oficial via `QUALITYTEST_API_BASE_URL` (`host_permissions` derivado automaticamente) e o token passou a ser guardado em `chrome.storage.session` (memória volátil, limpa ao fechar o navegador). Falta apenas definir o domínio oficial. Ver [extensao-chrome.md](extensao-chrome.md). |
+| P3 | **Provedor externo de IA: adaptador pronto, credenciais pendentes** | PENDENTE DE DEFINIÇÃO (código pronto) | O adaptador externo (compatível com OpenAI) está **implementado** e é plugável via `AI_PROVIDER=external`; falta definir o provedor concreto e fornecer credenciais. Por padrão o módulo permanece desativado. Ver [ia-opcional.md](ia-opcional.md). |
 
 ---
 
@@ -28,8 +28,8 @@ Consolidar, de forma honesta, as **pendências e limitações conhecidas** do QU
 
 | # | Pendência | Estado | Detalhe |
 |---|---|---|---|
-| P4 | **E2E de navegador (Playwright)** | PENDENTE | Não há testes de ponta a ponta no navegador. Existe apenas E2E de API via Supertest. Frontend (`apps/web`) e extensão (`apps/extension`) **não** possuem testes automatizados. Ver [relatorio-de-testes.md](relatorio-de-testes.md). |
-| P5 | **Metas de cobertura** | PENDENTE DE DEFINIÇÃO | Percentual mínimo e relatório de cobertura não definidos. Ver [plano-de-testes.md](plano-de-testes.md). |
+| P4 | **E2E de navegador (Playwright)** | RESOLVIDO (21/11/2026) | Suíte Playwright em `e2e/` cobrindo o frontend (`web`) e a extensão (`extension`, carregada via `launchPersistentContext`). Execução: `npm run test:e2e`. Ver [relatorio-de-testes.md](relatorio-de-testes.md). |
+| P5 | **Metas de cobertura** | RESOLVIDO (21/11/2026) | `coverageThreshold` definido em API, worker e extensão; `npm test` coleta cobertura e falha abaixo da meta. Ver [plano-de-testes.md](plano-de-testes.md). |
 | P6 | **Validação de migration/seed com Docker** | PENDENTE | Pendência herdada da Etapa 2: migrações existem, mas a validação completa com Docker não foi registrada. |
 
 ---
@@ -40,7 +40,7 @@ Consolidar, de forma honesta, as **pendências e limitações conhecidas** do QU
 |---|---|---|---|
 | P7 | **Política de retenção e descarte (LGPD)** | PENDENTE DE DEFINIÇÃO | Política formal de retenção/descarte e processo de atendimento a solicitações de titulares dependem da área de negócio/compliance. Ver [seguranca-lgpd.md](seguranca-lgpd.md). |
 | P8 | **Teste de restauração de backup** | PENDENTE | Procedimento documentado; a **execução** aguarda o provedor de PostgreSQL gerenciado (ainda não definido). Ver [deploy-infraestrutura.md](deploy-infraestrutura.md) §8.1. |
-| P9 | **Imutabilidade da auditoria em nível de banco** | PENDENTE | Hoje garantida na aplicação (sem endpoints de edição/remoção); falta trigger/RLS no banco. |
+| P9 | **Imutabilidade da auditoria em nível de banco** | RESOLVIDO (21/11/2026) | Trigger PostgreSQL (`qualitytest_block_audit_mutation`) bloqueia UPDATE/DELETE/TRUNCATE em `audit_logs`; migration `20261121010000_audit_logs_immutable`. Ver [modelo-de-dados.md](modelo-de-dados.md). |
 
 ---
 
@@ -70,7 +70,7 @@ Consolidar, de forma honesta, as **pendências e limitações conhecidas** do QU
 | P15 | **PDF consolidado** | ADIADO / PENDENTE | Requer ferramenta de geração de PDF sem comprometer a editabilidade dos fontes Markdown (seção 17). Ver [checklist-de-aceite.md](checklist-de-aceite.md). |
 | P16 | **Manuais de uso por perfil** | RESOLVIDO (21/11/2026) | Produzidos: [manuais/administrador.md](../manuais/administrador.md), [gestor.md](../manuais/gestor.md), [testador.md](../manuais/testador.md) e [desenvolvedor.md](../manuais/desenvolvedor.md). |
 | P17 | **Guia de instalação/uso da extensão** | RESOLVIDO (21/11/2026) | [manuais/extensao-chrome.md](../manuais/extensao-chrome.md). |
-| P18 | **Diagrama de casos de uso** | PENDENTE | Não há documento dedicado de casos de uso (item da seção 17.2). Ver [checklist-de-aceite.md](checklist-de-aceite.md). |
+| P18 | **Diagrama de casos de uso** | RESOLVIDO (21/11/2026) | [casos-de-uso.md](casos-de-uso.md) — diagrama de casos de uso (Mermaid), atores, relacionamentos `include`/`extend` e rastreabilidade (item da seção 17.2). |
 
 > Observação: `docs/api/openapi.json` passou a ser versionado (seção 17.3 / ETAPA 12) e é regenerado por `npm run docs:openapi`; deve ser atualizado sempre que os contratos mudarem.
 

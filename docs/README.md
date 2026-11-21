@@ -41,6 +41,7 @@ A documentação descreve o sistema **realmente implementado**, com itens que de
 | [architecture/diagnostico.md](architecture/diagnostico.md) | Diagnóstico do repositório e do ambiente (ETAPA 1) | Registro histórico |
 | [architecture/arquitetura-geral.md](architecture/arquitetura-geral.md) | Visão geral da arquitetura, princípios, stack e estrutura de diretórios | Implementado |
 | [architecture/c4.md](architecture/c4.md) | Diagramas C4: Contexto, Containers e Componentes | Implementado |
+| [architecture/casos-de-uso.md](architecture/casos-de-uso.md) | Diagrama de casos de uso, atores e relacionamentos (seção 17.2) | Implementado |
 
 ### 3.2 Modelo e regras
 
@@ -56,8 +57,8 @@ A documentação descreve o sistema **realmente implementado**, com itens que de
 | [architecture/contratos-api.md](architecture/contratos-api.md) | Contratos da API REST | Implementado |
 | [api/openapi.json](api/openapi.json) | Documento OpenAPI gerado (`npm run docs:openapi`); Swagger em `/api/docs` | Implementado |
 | [architecture/extensao-chrome.md](architecture/extensao-chrome.md) | Estratégia da extensão Chrome (Manifest V3) | Implementado (Etapa 7; pendências na seção 11) |
-| [architecture/notificacoes-whatsapp.md](architecture/notificacoes-whatsapp.md) | Serviço desacoplado de notificações e limitações do WhatsApp | Implementado (canal WhatsApp desativado) |
-| [architecture/ia-opcional.md](architecture/ia-opcional.md) | Módulo opcional de IA assistiva (desativável) | Implementado |
+| [architecture/notificacoes-whatsapp.md](architecture/notificacoes-whatsapp.md) | Serviço desacoplado de notificações e limitações do WhatsApp | Implementado (WhatsApp oficial integrado, desativado por padrão) |
+| [architecture/ia-opcional.md](architecture/ia-opcional.md) | Módulo opcional de IA assistiva (desativável) | Implementado (desativado por padrão; provedor externo plugável) |
 
 ### 3.4 Entrega, qualidade e operação
 
@@ -75,7 +76,7 @@ A documentação descreve o sistema **realmente implementado**, com itens que de
 | [architecture/deploy-infraestrutura.md](architecture/deploy-infraestrutura.md) | Deploy, ambientes, CI/CD, runbooks e rollback | Preparação implementada — deploy **não executado** |
 | [architecture/seguranca-lgpd.md](architecture/seguranca-lgpd.md) | Revisão de segurança, headers, secrets, anexos e LGPD | Implementado (revisão da ETAPA 10) |
 | [architecture/plano-de-testes.md](architecture/plano-de-testes.md) | Estratégia de testes e critérios de aceite | Implementado (estratégia executada) |
-| [architecture/sitemap-e-telas.md](architecture/sitemap-e-telas.md) | Sitemap, navegação, telas e matriz por perfil | Implementado na Etapa 6 (pendência: E2E de navegador) |
+| [architecture/sitemap-e-telas.md](architecture/sitemap-e-telas.md) | Sitemap, navegação, telas e matriz por perfil | Implementado na Etapa 6 (fluxos críticos cobertos por E2E Playwright) |
 | [architecture/riscos-e-dependencias.md](architecture/riscos-e-dependencias.md) | Riscos, custos e dependências externas | Revisado |
 | [architecture/plano-incremental.md](architecture/plano-incremental.md) | As 12 etapas do plano de execução | Etapas 1 a 10 concluídas; 11 em preparação; 12 concluída (exceto PDF) |
 
@@ -130,14 +131,15 @@ Os pontos abaixo ainda dependem de decisão ou informação externa. Consolidaç
 
 - Domínio oficial e configuração de HTTPS — PENDENTE DE DEFINIÇÃO
 - Conta/projeto na Vercel e demais credenciais de deploy — PENDENTE DE DEFINIÇÃO
-- Credenciais oficiais da WhatsApp Business Platform / Cloud API (Meta) — PENDENTE DE DEFINIÇÃO
+- Credenciais oficiais da WhatsApp Business Platform / Cloud API (Meta) — PENDENTE DE DEFINIÇÃO (integração pronta)
+- Domínio oficial da API/extensão — PENDENTE DE DEFINIÇÃO (URL já configurável no build da extensão; token em `chrome.storage.session`)
 - Provedor de PostgreSQL gerenciado — PENDENTE DE DEFINIÇÃO
 - Provedor de Redis gerenciado — PENDENTE DE DEFINIÇÃO
 - Provedor de storage S3-compatível — PENDENTE DE DEFINIÇÃO
 - Registry de imagens Docker — PENDENTE DE DEFINIÇÃO
 - Observabilidade / logs centralizados — PENDENTE DE DEFINIÇÃO
-- Provedor de IA (opcional) e base legal de tratamento — PENDENTE DE DEFINIÇÃO
+- Provedor de IA concreto (opcional) e base legal de tratamento — PENDENTE DE DEFINIÇÃO (adaptador externo pronto)
 - Política de retenção e descarte (LGPD) — PENDENTE DE DEFINIÇÃO
-- Metas de cobertura de testes e E2E de navegador — PENDENTE
+- Metas de cobertura de testes e E2E de navegador — RESOLVIDO (2026-11-21)
 - PDF consolidado da documentação — ADIADO
 - Custos estimados por serviço — a levantar

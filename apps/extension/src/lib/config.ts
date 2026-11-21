@@ -1,15 +1,32 @@
 /**
  * Configuração da extensão QUALITY TEST.
  *
- * A URL oficial de produção da API está PENDENTE DE DEFINIÇÃO (seção 11 de
- * `docs/architecture/extensao-chrome.md`). Enquanto isso, apontamos para o
- * backend de desenvolvimento local e restringimos `host_permissions` a ele em
- * `src/manifest.json`. Ao definir o domínio oficial, ajustar `API_BASE_URL` e o
- * respectivo `host_permissions`.
+ * A URL da API é definida no BUILD (esbuild `define`, ver `build.mjs`). O valor
+ * padrão aponta para o backend de desenvolvimento local. Para publicar contra o
+ * domínio oficial, defina `QUALITYTEST_API_BASE_URL` no ambiente antes de
+ * `npm run build` (o `host_permissions` do manifest é ajustado automaticamente).
+ *
+ * O domínio oficial de produção segue PENDENTE DE DEFINIÇÃO (seção 11 de
+ * `docs/architecture/extensao-chrome.md`). Enquanto não definido, mantém-se o
+ * backend local.
  */
-export const API_BASE_URL = 'http://localhost:3333/api';
+declare const QUALITYTEST_API_BASE_URL: string | undefined;
 
-/** Chave da sessão autenticada em `chrome.storage.local`. */
+const FALLBACK_API_BASE_URL = 'http://localhost:3333/api';
+
+/** URL base da API consumida pela extensão (sem barra final). */
+export const API_BASE_URL =
+  typeof QUALITYTEST_API_BASE_URL === 'string' && QUALITYTEST_API_BASE_URL.trim() !== ''
+    ? QUALITYTEST_API_BASE_URL.trim().replace(/\/+$/, '')
+    : FALLBACK_API_BASE_URL;
+
+/**
+ * Chave da sessão autenticada (`chrome.storage.session`).
+ *
+ * A sessão (com os tokens) fica em `chrome.storage.session`, que é apenas em
+ * MEMÓRIA: não é gravada em disco e é limpa ao encerrar o navegador. Ver
+ * `lib/session.ts` para a justificativa de segurança.
+ */
 export const SESSION_STORAGE_KEY = 'qualitytest.session';
 
 /** Chave da fila local (outbox) em `chrome.storage.local`. */

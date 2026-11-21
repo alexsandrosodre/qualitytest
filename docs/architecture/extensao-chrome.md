@@ -122,7 +122,17 @@ flowchart TD
 - **Não expor credenciais** no código da extensão.
 - **Documentar instalação e atualização.**
 
-`host_permissions` e demais permissões do Manifest V3 serão definidas na implementação, restritas ao domínio da API — **PENDENTE DE DEFINIÇÃO** (depende do domínio oficial).
+O `host_permissions` do Manifest V3 é **derivado automaticamente no build**: a origem da API é extraída de `QUALITYTEST_API_BASE_URL` (variável lida por `apps/extension/build.mjs`) e adicionada ao `dist/manifest.json`. O domínio oficial de produção em si segue **PENDENTE DE DEFINIÇÃO** — enquanto não definido, o build aponta para o backend local (`http://localhost:3333/api`).
+
+**Configuração por ambiente (build):**
+
+```
+QUALITYTEST_API_BASE_URL=https://api.<dominio-oficial> npm run build -w @qualitytest/extension
+```
+
+A URL é injetada no bundle (esbuild `define`) e o `host_permissions` passa a incluir `https://api.<dominio-oficial>/*`. Nenhuma alteração de código é necessária para apontar a extensão ao domínio oficial.
+
+> **Armazenamento do token (RESOLVIDO):** a sessão autenticada (com `accessToken`/`refreshToken`) é mantida em `chrome.storage.session` — **somente em memória**, isolada da página, restrita aos contextos confiáveis da extensão e **limpa ao encerrar o navegador** (não é gravada em disco). Requer Chrome 102+ (`minimum_chrome_version: "120"` no manifest). A fila local (outbox) permanece em `chrome.storage.local` por ser uma fila de reenvio offline que precisa sobreviver ao reinício; ela não contém tokens.
 
 ---
 
@@ -184,10 +194,10 @@ sequenceDiagram
 
 ## 11. Pontos pendentes de definição
 
-- Domínio oficial da API/extensão — **PENDENTE DE DEFINIÇÃO**.
-- Lista exata de `permissions`/`host_permissions` do Manifest V3 — derivada do domínio — **PENDENTE DE DEFINIÇÃO**.
-- Mecanismo de armazenamento seguro do token na extensão — **PENDENTE DE DEFINIÇÃO**.
+- Domínio oficial da API/extensão — **PENDENTE DE DEFINIÇÃO** (o build já o aceita via `QUALITYTEST_API_BASE_URL`).
 - Canal de distribuição da extensão (Chrome Web Store interna vs. carregamento local) — **PENDENTE DE DEFINIÇÃO**.
+
+> Resolvidos: (a) o **armazenamento seguro do token** — a sessão passou para `chrome.storage.session` (memória volátil, limpa ao fechar o navegador); (b) a lista de `permissions`/`host_permissions` — `host_permissions` é derivado automaticamente da URL da API no build (ver seção 7).
 
 ---
 

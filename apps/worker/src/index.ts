@@ -10,7 +10,8 @@
  * - Dead-letter queue: jobs que esgotam as tentativas são copiados para
  *   `notifications-dlq`, de onde podem ser inspecionados e reprocessados
  *   administrativamente.
- * - Canal WhatsApp: DESATIVADO até haver credenciais oficiais (seção 7.1).
+ * - Canal WhatsApp: OFICIAL (Cloud API). Permanece DESATIVADO enquanto não
+ *   houver credenciais no ambiente (seção 7.1) — ver `readWhatsAppConfig()`.
  */
 import { PrismaClient } from '@prisma/client';
 import { Queue, Worker, type Job } from 'bullmq';
@@ -19,6 +20,7 @@ import { createChannelRegistry } from './channels';
 import {
   NOTIFICATIONS_DLQ,
   NOTIFICATIONS_QUEUE,
+  readWhatsAppConfig,
   readWorkerConfig,
   type RedisConnectionOptions,
   type WorkerLogger,
@@ -70,9 +72,18 @@ async function main(): Promise<void> {
     logger.warn(`Erro na fila "${NOTIFICATIONS_DLQ}": ${error.message}`),
   );
 
+  const whatsapp = readWhatsAppConfig();
+  if (whatsapp === null) {
+    logger.warn(
+      'Canal WhatsApp desativado: credenciais oficiais (WHATSAPP_PHONE_NUMBER_ID/WHATSAPP_CLOUD_API_TOKEN) ausentes.',
+    );
+  } else {
+    logger.info(`Canal WhatsApp oficial ativo (Graph ${whatsapp.apiVersion}).`);
+  }
+
   const processor = createNotificationProcessor({
     prisma,
-    channels: createChannelRegistry(),
+    channels: createChannelRegistry(whatsapp),
     logger,
     webBaseUrl: config.webBaseUrl,
   });

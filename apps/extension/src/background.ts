@@ -15,7 +15,7 @@ import type { OutboxAttachment, Session } from './lib/types';
  *
  * IMPORTANTE: o service worker é efêmero e pode ser encerrado a qualquer
  * momento. Portanto NÃO armazenamos tokens em variáveis globais persistidas: a
- * sessão é sempre lida/gravada em `chrome.storage.local` (ver `lib/session.ts`).
+ * sessão é sempre lida/gravada em `chrome.storage.session` (ver `lib/session.ts`).
  */
 
 interface CaptureTabResponse {

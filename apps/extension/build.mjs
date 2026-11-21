@@ -1,4 +1,4 @@
-import { cp, mkdir, readdir, rm } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -7,6 +7,39 @@ import { build } from 'esbuild';
 const rootDir = dirname(fileURLToPath(import.meta.url));
 const srcDir = join(rootDir, 'src');
 const outDir = join(rootDir, 'dist');
+
+/**
+ * URL base da API usada pela extensão. Vem do ambiente no momento do build;
+ * o padrão é o backend de desenvolvimento local. O domínio oficial de produção
+ * segue PENDENTE DE DEFINIÇÃO (docs/architecture/extensao-chrome.md §11).
+ */
+const apiBaseUrl = (process.env.QUALITYTEST_API_BASE_URL ?? 'http://localhost:3333/api').trim();
+
+/** Deriva a permissão de host (`origin/*`) da URL base da API. */
+function apiHostPermission(baseUrl) {
+  try {
+    return `${new URL(baseUrl).origin}/*`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Ajusta o `host_permissions` do manifest para incluir a origem da API usada.
+ * Sem isso, a extensão não conseguiria chamar um domínio oficial configurado.
+ */
+async function patchManifest(targetDir, permission) {
+  if (permission === null) {
+    console.warn(`[manifest] URL da API inválida; mantendo host_permissions padrão: ${apiBaseUrl}`);
+    return;
+  }
+  const manifestPath = join(targetDir, 'manifest.json');
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  const hosts = new Set(Array.isArray(manifest.host_permissions) ? manifest.host_permissions : []);
+  hosts.add(permission);
+  manifest.host_permissions = [...hosts];
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+}
 
 /** Opções compartilhadas pelos dois pontos de entrada da extensão. */
 const sharedOptions = {
@@ -17,7 +50,10 @@ const sharedOptions = {
   jsx: 'automatic',
   sourcemap: true,
   minify: false,
-  define: { 'process.env.NODE_ENV': '"production"' },
+  define: {
+    'process.env.NODE_ENV': '"production"',
+    QUALITYTEST_API_BASE_URL: JSON.stringify(apiBaseUrl),
+  },
   logLevel: 'info',
 };
 
@@ -48,8 +84,11 @@ async function run() {
     cp(join(srcDir, 'popup', 'styles.css'), join(outDir, 'styles.css')),
   ]);
 
+  await patchManifest(outDir, apiHostPermission(apiBaseUrl));
+
   const files = (await readdir(outDir)).sort();
-  console.log('\nExtensão QUALITY TEST gerada em apps/extension/dist/:');
+  console.log(`\nAPI base URL: ${apiBaseUrl}`);
+  console.log('Extensão QUALITY TEST gerada em apps/extension/dist/:');
   for (const file of files) {
     console.log(`  - ${file}`);
   }

@@ -389,7 +389,7 @@ Registro de cada tentativa de entrega.
 
 ### 3.13 AuditLog
 
-Trilha de auditoria. Não deve ser editável por usuários comuns.
+Trilha de auditoria — **SOMENTE INSERÇÃO**. Não deve ser editável por usuários comuns. A imutabilidade é reforçada **no banco**: a função `qualitytest_block_audit_mutation()` e os triggers `audit_logs_no_update_delete` e `audit_logs_no_truncate` (migration `20261121010000_audit_logs_immutable`) bloqueiam `UPDATE`, `DELETE` e `TRUNCATE` na tabela.
 
 | Campo | Tipo | Regra |
 |---|---|---|
@@ -475,6 +475,7 @@ Todos os enums abaixo derivam literalmente da especificação e devem ser confir
 5. **Desativação lógica (soft delete)** quando apropriado — preferir `status = INATIVO` a exclusão física para `User`, `Project`, `ProjectMember`, `NotificationDestination`, `NotificationRule`.
 6. **Nunca confiar em `projectId` enviado pelo cliente** — validar `ProjectMember` e permissão no backend antes de qualquer leitura/escrita.
 7. **Isolamento por projeto** — avaliar e testar a estratégia de isolamento, incluindo testes automatizados de autorização.
+8. **Imutabilidade da auditoria no banco** — `audit_logs` é somente inserção. Além de a aplicação não expor edição/remoção, um trigger PostgreSQL (`qualitytest_block_audit_mutation`) bloqueia `UPDATE`, `DELETE` e `TRUNCATE` por acesso direto (SQL/operacional), garantindo a integridade da trilha mesmo fora da aplicação.
 
 ---
 

@@ -67,7 +67,8 @@ Definidas em `apps/extension/src/manifest.json` (e refletidas no `dist`):
 2. Se não houver sessão, o popup apresenta o formulário de **login** (E-mail e Senha).
 3. Clique em **Entrar**.
 
-A sessão (access + refresh token) é gravada em `chrome.storage.local`, isolado da página em teste.
+A sessão (access + refresh token) é gravada em `chrome.storage.session` (área em **memória,
+volátil**, limpa ao fechar o navegador), isolada da página em teste.
 A extensão **renova o access token automaticamente** (via `/auth/refresh`) quando está próximo de
 expirar e, em caso de `401`, renova e repete a operação uma vez. Se a sessão não puder ser
 renovada, é solicitado novo login. Use **Sair** no cabeçalho do popup para encerrar a sessão.
@@ -143,13 +144,13 @@ lidos senhas, cookies, tokens, conteúdo de formulários nem dados pessoais.
 
 ## 9. Segurança e privacidade
 
-- A sessão é armazenada em `chrome.storage.local` (isolado da página em teste, diferente de
-  `localStorage`).
+- A sessão é armazenada em `chrome.storage.session` (área de **memória**, isolada da página em
+  teste e limpa ao fechar o navegador, diferente de `localStorage`). A **outbox** de reenvio
+  offline permanece em `chrome.storage.local` (não contém tokens).
 - A comunicação é via HTTPS em produção (em desenvolvimento aponta para `http://localhost`).
 - Somente dados técnicos permitidos são coletados; a imagem deve ser revisada antes do envio.
-- **PENDENTE:** o mecanismo de **armazenamento seguro** (criptografia/cofre) do token na extensão
-  está **PENDENTE DE DEFINIÇÃO**. A escolha atual evita exposição à página, mas não é criptografada
-  em disco.
+- Os tokens **não são persistidos em disco**: ficam apenas na memória do navegador durante a
+  sessão, reduzindo a exposição em caso de comprometimento do perfil.
 
 ---
 

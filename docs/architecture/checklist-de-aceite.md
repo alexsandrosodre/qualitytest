@@ -22,13 +22,13 @@ Reproduzir, item a item, a **CHECKLIST FINAL DE ENTREGA** (seção 22 da especif
 - [x] **Usuário participa de múltiplos projetos com uma única conta.** Modelo `ProjectMember`; coberto por testes multi-projeto e de isolamento.
 - [x] **Cadastro e gestão de projetos.** CRUD de projetos, ambientes, domínios e membros.
 - [x] **Isolamento de dados por projeto validado no backend.** `ProjectAccessService` valida `ProjectMember` **ATIVO**; `test/project-isolation.e2e-spec.ts` + cenários 401/403/404.
-- [x] **Seleção de projeto na extensão.** Implementada na Etapa 7. *Observação: sem testes automatizados e com pendências abertas (domínio oficial e armazenamento seguro do token).*
+- [x] **Seleção de projeto na extensão.** Implementada na Etapa 7. *Observação: token armazenado em `chrome.storage.session` (memória volátil); há E2E da extensão (Playwright). Resta definir o domínio oficial.*
 - [x] **Sugestão de projeto por domínio, com confirmação.** `project-suggest.e2e-spec.ts` + `project-suggestion.spec.ts`; sugestão sempre corrigível manualmente.
-- [x] **Registro de ocorrência e screenshot.** Núcleo de ocorrências + anexos por URL assinada; captura pela extensão. *Observação: frontend/extensão sem testes automatizados.*
+- [x] **Registro de ocorrência e screenshot.** Núcleo de ocorrências + anexos por URL assinada; captura pela extensão. *Observação: extensão com testes unitários (sessão) e E2E; frontend coberto por E2E de login.*
 - [x] **Identificação automática do autor autenticado.** O backend atribui o autor pela sessão, nunca por `userId` do cliente.
 - [x] **Comentários e histórico.** Endpoints de comentários e de histórico cronológico.
 - [x] **Atribuição e fluxo de status.** Responsável + transições de status controladas (`occurrence-status.e2e-spec.ts`, `occurrence-status.transitions.spec.ts`).
-- [x] **Dashboard e relatórios autorizados.** Frontend e endpoints `/reports/*`. *Observação: sem E2E de navegador.*
+- [x] **Dashboard e relatórios autorizados.** Frontend e endpoints `/reports/*`. *Observação: coberto por testes de API; os fluxos de dashboard ainda não têm E2E de navegador.*
 - [x] **Auditoria.** `AuditService` + `/audit`; histórico e metadados sanitizados.
 - [x] **Notificações assíncronas.** Fila BullMQ + worker; notificação não bloqueia a criação da ocorrência.
 - [x] **Integração WhatsApp oficial validada ou pendência claramente documentada.** A integração **não está ativa** (sem credenciais); a pendência está documentada em [notificacoes-whatsapp.md](notificacoes-whatsapp.md) e [pendencias-conhecidas.md](pendencias-conhecidas.md).
@@ -42,7 +42,7 @@ Reproduzir, item a item, a **CHECKLIST FINAL DE ENTREGA** (seção 22 da especif
 - [x] **Lint.** `npm run lint` (ESLint flat config) + CI.
 - [x] **Testes unitários.** API e worker (`src/**/*.spec.ts`).
 - [x] **Testes de integração.** Supertest (`apps/api/test/*.e2e-spec.ts`).
-- [ ] **Testes E2E.** E2E de **navegador** (Playwright) **não implementado** — pendência. Há E2E de **API** via Supertest. Ver [relatorio-de-testes.md](relatorio-de-testes.md).
+- [x] **Testes E2E.** E2E de **navegador** (Playwright) implementado para `web` e extensão (`e2e/`) e E2E de **API** via Supertest. Ver [relatorio-de-testes.md](relatorio-de-testes.md).
 - [x] **Testes de isolamento entre projetos.** `test/project-isolation.e2e-spec.ts`.
 - [x] **Testes de segurança.** `security.middleware.spec.ts` e `env.spec.ts` (além dos cenários 401/403/404 de cada suíte).
 - [x] **Migrations revisadas.** Migrações versionadas em `apps/api/prisma/migrations/`. *Observação: a validação de migration/seed com Docker não foi registrada (pendência herdada da Etapa 2).*
@@ -61,7 +61,7 @@ Reproduzir, item a item, a **CHECKLIST FINAL DE ENTREGA** (seção 22 da especif
 - [x] **ER.** [modelo-de-dados.md](modelo-de-dados.md).
 - [x] **Sitemap.** [sitemap-e-telas.md](sitemap-e-telas.md). *Observação: documento marcado como Planejado — pode não refletir 100% das telas já implementadas.*
 - [x] **Diagramas de telas.** Wireframes descritivos em [sitemap-e-telas.md](sitemap-e-telas.md) §5.
-- [ ] **Casos de uso.** Não há documento dedicado de diagrama de casos de uso.
+- [x] **Casos de uso.** [casos-de-uso.md](casos-de-uso.md) — diagrama de casos de uso (Mermaid), atores e relacionamentos.
 - [x] **Sequência.** [arquitetura-geral.md](arquitetura-geral.md) §6, [extensao-chrome.md](extensao-chrome.md) §9 e [notificacoes-whatsapp.md](notificacoes-whatsapp.md).
 - [x] **Atividades.** Ciclo de vida da ocorrência (`stateDiagram-v2`) em [modelo-de-dados.md](modelo-de-dados.md).
 - [x] **Deployment.** [deploy-infraestrutura.md](deploy-infraestrutura.md).
@@ -83,8 +83,8 @@ Reproduzir, item a item, a **CHECKLIST FINAL DE ENTREGA** (seção 22 da especif
 | Bloco | Atendidos | Pendentes |
 |---|---|---|
 | Produto | 15 | 0 |
-| Engenharia | 9 | 3 |
-| Documentação | 18 | 2 |
+| Engenharia | 10 | 2 |
+| Documentação | 19 | 1 |
 
 > As pendências acima estão consolidadas com contexto e impacto em [pendencias-conhecidas.md](pendencias-conhecidas.md).
 

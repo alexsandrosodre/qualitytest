@@ -2,6 +2,7 @@
   "manifest_version": 3,
   "name": "QUALITY TEST",
   "version": "0.1.0",
+  "minimum_chrome_version": "120",
   "description": "Registre ocorrências do QUALITY TEST enquanto navega no sistema em teste.",
   "action": { "default_popup": "popup.html", "default_title": "QUALITY TEST" },
   "background": { "service_worker": "background.js", "type": "module" },

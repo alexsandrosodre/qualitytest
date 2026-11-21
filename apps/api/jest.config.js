@@ -12,5 +12,16 @@ module.exports = {
   setupFiles: ['<rootDir>/test/setup-env.ts'],
   collectCoverageFrom: ['src/**/*.(t|j)s'],
   coverageDirectory: './coverage',
+  // Metas de cobertura (medidas atuais: 84% stmts / 60% branches / 79% funcs
+  // / 83% lines). Os limites ficam logo abaixo para barrar regressões sem
+  // quebrar o build por variações pequenas.
+  coverageThreshold: {
+    global: {
+      statements: 80,
+      branches: 55,
+      functions: 75,
+      lines: 80,
+    },
+  },
   testEnvironment: 'node',
 };

@@ -59,6 +59,49 @@ export function readWorkerConfig(): WorkerConfig {
   };
 }
 
+/**
+ * Credenciais oficiais da WhatsApp Business Platform / Cloud API (Meta).
+ *
+ * NUNCA são versionadas: vêm do ambiente. Enquanto ausentes, o canal permanece
+ * DESATIVADO (nenhuma chamada de rede é feita) — ver `channels.ts`.
+ */
+export interface WhatsAppConfig {
+  /** Versão da Graph API (ex.: `v21.0`). */
+  apiVersion: string;
+  /** Identificador do número de telefone remetente (Phone Number ID). */
+  phoneNumberId: string;
+  /** Token de acesso da Cloud API (segredo — nunca persistido nem logado). */
+  accessToken: string;
+  /** Nome do template aprovado (opcional; quando ausente envia-se texto livre). */
+  defaultTemplateName?: string;
+  /** Código de idioma do template (ex.: `pt_BR`). */
+  defaultTemplateLanguage: string;
+}
+
+/**
+ * Lê as credenciais da WhatsApp Cloud API do ambiente. Retorna `null` quando
+ * `WHATSAPP_PHONE_NUMBER_ID` ou `WHATSAPP_CLOUD_API_TOKEN` estão ausentes, e
+ * nesse caso o canal continua desativado (sem chamadas de rede).
+ */
+export function readWhatsAppConfig(): WhatsAppConfig | null {
+  const phoneNumberId = (process.env.WHATSAPP_PHONE_NUMBER_ID ?? '').trim();
+  const accessToken = (process.env.WHATSAPP_CLOUD_API_TOKEN ?? '').trim();
+
+  if (phoneNumberId === '' || accessToken === '') {
+    return null;
+  }
+
+  const templateName = (process.env.WHATSAPP_TEMPLATE_NAME ?? '').trim();
+
+  return {
+    apiVersion: (process.env.WHATSAPP_API_VERSION ?? 'v21.0').trim(),
+    phoneNumberId,
+    accessToken,
+    defaultTemplateLanguage: (process.env.WHATSAPP_TEMPLATE_LANGUAGE ?? 'pt_BR').trim(),
+    ...(templateName === '' ? {} : { defaultTemplateName: templateName }),
+  };
+}
+
 /** Contexto de log do worker (permite injetar um logger nos testes). */
 export interface WorkerLogger {
   info(message: string, meta?: Record<string, unknown>): void;
