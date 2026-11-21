@@ -63,7 +63,9 @@ Na raiz do repositório:
 npm install
 ```
 
-O `postinstall` compila `@qualitytest/shared` e gera o Prisma Client automaticamente.
+O `postinstall` compila `@qualitytest/shared` automaticamente. Para trabalhar com a
+API, gere o Prisma Client com `npm run db:generate` (as migrações do Prisma também o
+geram).
 
 ### 2. Configurar variáveis de ambiente
 
@@ -246,7 +248,7 @@ reais) está em `.env.production.example`. Destaques:
 ## Integração contínua
 
 `.github/workflows/ci.yml` executa, em push e pull request para `main`:
-`npm ci` → `npm run lint` → `npm run typecheck` → `npm test` → `npm run build`.
+`npm ci` → `npm run db:generate` → `npm run lint` → `npm run typecheck` → `npm test` → `npm run build`.
 Em seguida, o job `docker-images` valida o build das imagens Docker da API e do worker
 (`docker/api.Dockerfile` e `docker/worker.Dockerfile`), sem publicá-las.
 

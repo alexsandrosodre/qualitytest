@@ -24,9 +24,12 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # Copia o monorepo (respeitando o .dockerignore) e instala as dependências.
-# O `postinstall` da raiz compila @qualitytest/shared e gera o Prisma Client.
+# O `postinstall` da raiz compila @qualitytest/shared.
 COPY . .
 RUN npm ci
+
+# Gera o Prisma Client (necessário para compilar o worker).
+RUN npm run db:generate
 
 # Compila o worker (saída em apps/worker/dist).
 RUN npm run build --workspace @qualitytest/worker

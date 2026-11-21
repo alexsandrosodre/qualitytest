@@ -12,7 +12,7 @@
     "packages/*"
   ],
   "scripts": {
-    "postinstall": "npm run build --workspace @qualitytest/shared && npm run prisma:generate --workspace @qualitytest/api",
+    "postinstall": "npm run build --workspace @qualitytest/shared",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "npm run typecheck --workspaces --if-present",

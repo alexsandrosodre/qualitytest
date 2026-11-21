@@ -33,7 +33,8 @@ Na raiz do repositório:
 npm install
 ```
 
-O `postinstall` compila `@qualitytest/shared` e gera o Prisma Client automaticamente.
+O `postinstall` compila `@qualitytest/shared` automaticamente. Para trabalhar com a API,
+gere o Prisma Client com `npm run db:generate` (as migrações do Prisma também o geram).
 
 ### 3.2 Configurar variáveis de ambiente
 
